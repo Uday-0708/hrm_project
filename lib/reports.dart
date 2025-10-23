@@ -7,6 +7,7 @@ import 'user_provider.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:intl/intl.dart';
 
+
 // ---------------- Model ----------------
 class PerformanceReview {
   final String id;
@@ -67,7 +68,7 @@ class ReportsAnalyticsPage extends StatefulWidget {
 }
 
 class _ReportsAnalyticsPageState extends State<ReportsAnalyticsPage> {
-  final String apiBase = 'http://localhost:5000';
+  final String apiBase = 'https://hrm-project-2.onrender.com';
   final String listPath = '/reports';
   final String detailsPath = '/reports';
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+
 class EmployeePerformanceView extends StatefulWidget {
   final String employeeId;
   const EmployeePerformanceView({super.key, required this.employeeId});
@@ -20,7 +21,7 @@ class _EmployeePerformanceViewState extends State<EmployeePerformanceView> {
   }
 
   Future<void> fetchReviews() async {
-    final url = Uri.parse('http://localhost:5000/perform/performance/get-reviews/${widget.employeeId}');
+    final url = Uri.parse('https://hrm-project-2.onrender.com/perform/performance/get-reviews/${widget.employeeId}');
     final response = await http.get(url);
 
     if (response.statusCode == 200) {

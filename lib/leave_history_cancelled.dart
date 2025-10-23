@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'sidebar.dart';
 import 'user_provider.dart'; // ⬅️ Import your provider class
 
+
 class LeaveHistoryCancelled extends StatefulWidget {
   const LeaveHistoryCancelled({super.key});
 
@@ -16,7 +17,7 @@ class LeaveHistoryCancelled extends StatefulWidget {
 class _LeaveHistoryCancelledState extends State<LeaveHistoryCancelled> {
   Future<List<Map<String, dynamic>>>? _cancelledLeavesFuture;
 
-  static const String baseUrl = 'http://localhost:5000/apply/cancelled';
+  static const String baseUrl = 'https://hrm-project-2.onrender.com/apply/cancelled';
 
   @override
   void initState() {

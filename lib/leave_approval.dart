@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'sidebar.dart';
 import 'user_provider.dart';
 
+
 class LeaveApprovalPage extends StatefulWidget {
   final String userRole;
   const LeaveApprovalPage({super.key, required this.userRole});
@@ -16,7 +17,7 @@ class LeaveApprovalPage extends StatefulWidget {
 }
 
 class _LeaveApprovalPageState extends State<LeaveApprovalPage> {
-  final String apiUrl = "http://localhost:5000/apply";
+  final String apiUrl = "https://hrm-project-2.onrender.com/apply";
 
   List<dynamic> leaveRequests = [];
   List<dynamic> filteredLeaves = [];

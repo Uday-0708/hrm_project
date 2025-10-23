@@ -5,6 +5,7 @@ import 'sidebar.dart';
 // import 'email_page.dart';
 import 'message.dart';
 
+
 class EmployeeDirectoryPage extends StatefulWidget {
   const EmployeeDirectoryPage({super.key});
 
@@ -25,7 +26,7 @@ class EmployeeDirectoryPageState extends State<EmployeeDirectoryPage> {
   Future<void> fetchEmployees() async {
     try {
       final response = await http.get(
-        Uri.parse("http://localhost:5000/api/employees"),
+        Uri.parse("https://hrm-project-2.onrender.com/api/employees"),
       );
 
       if (response.statusCode == 200) {
@@ -91,7 +92,7 @@ class EmployeeDirectoryPageState extends State<EmployeeDirectoryPage> {
                         //final profile = emp['photo']; // 🔹 backend field
                         final imageUrl =
                             (emp['employeeImage'] != null && emp['employeeImage'].isNotEmpty)
-                            ? "http://localhost:5000${emp['employeeImage']}"
+                            ? "https://hrm-project-2.onrender.com${emp['employeeImage']}"
                             : "";
                         return _employeeCard(
                           emp['employeeId'] ?? "", // ✅ pass employeeId also

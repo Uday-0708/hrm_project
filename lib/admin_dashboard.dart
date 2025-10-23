@@ -16,6 +16,7 @@ import 'event_banner_slider.dart';
 import 'leave_approval.dart';
 import 'adminperformance.dart'; // ✅ for Performance Review
 
+
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
 
@@ -58,7 +59,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
     try {
       final response = await http.get(
-        Uri.parse("http://localhost:5000/get-employee-name/$employeeId"),
+        Uri.parse("https://hrm-project-2.onrender.com/get-employee-name/$employeeId"),
       );
 
       if (response.statusCode == 200) {
@@ -90,7 +91,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
       final year = DateTime.now().year;
       final url =
-          "http://localhost:5000/apply/leave-balance/$employeeId?year=$year";
+          "https://hrm-project-2.onrender.com/apply/leave-balance/$employeeId?year=$year";
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
@@ -127,7 +128,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     try {
       final response = await http.get(
         Uri.parse(
-          "http://localhost:5000/apply/pending-count?approver=$userRole",
+          "https://hrm-project-2.onrender.com/apply/pending-count?approver=$userRole",
         ),
       );
 
@@ -148,7 +149,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Future<void> _showEmployeeComments() async {
     try {
       final response = await http.get(
-        Uri.parse("http://localhost:5000/review-decision/feedback/employee"),
+        Uri.parse("https://hrm-project-2.onrender.com/review-decision/feedback/employee"),
         headers: {"Accept": "application/json"},
       );
 

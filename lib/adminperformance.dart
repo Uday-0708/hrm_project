@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'user_provider.dart';
 import 'sidebar.dart';
 
+
 class PerformanceReviewPage extends StatefulWidget {
   const PerformanceReviewPage({super.key});
 
@@ -85,7 +86,7 @@ class _PerformanceReviewPageState extends State<PerformanceReviewPage> {
       return;
     }
 
-    final url = Uri.parse('http://localhost:5000/reviews');
+    final url = Uri.parse('https://hrm-project-2.onrender.com/reviews');
     // ignore: unnecessary_null_comparison
     setState(() => _isloading = true);
 
@@ -122,7 +123,7 @@ class _PerformanceReviewPageState extends State<PerformanceReviewPage> {
 
         // 🔔 Add notifications (one for employee, one for admin)
         String currentMonth = getCurrentMonth();
-        final notifUrl = Uri.parse("http://localhost:5000/notifications");
+        final notifUrl = Uri.parse("https://hrm-project-2.onrender.com/notifications");
         final userProvider = Provider.of<UserProvider>(context, listen: false);
         final adminId = userProvider.employeeId ?? 'admin';
         final adminName = userProvider.employeeName ?? 'Admin';

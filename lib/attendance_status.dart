@@ -7,6 +7,7 @@ import 'employee_dashboard.dart';
 import 'package:provider/provider.dart';
 import 'user_provider.dart';
 
+
 class AttendanceScreen extends StatefulWidget {
   const AttendanceScreen({super.key}); // ✅ self-sufficient (no action)
 
@@ -51,7 +52,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     final employeeId =
         Provider.of<UserProvider>(context, listen: false).employeeId ?? '';
     var url = Uri.parse(
-        'http://localhost:5000/attendance/attendance/status/$employeeId');
+        'https://hrm-project-2.onrender.com/attendance/attendance/status/$employeeId');
 
     try {
       var response = await http.get(url);
@@ -94,7 +95,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     final employeeId =
         Provider.of<UserProvider>(context, listen: false).employeeId ?? '';
     var url =
-        Uri.parse('http://localhost:5000/attendance/attendance/mark/$employeeId');
+        Uri.parse('https://hrm-project-2.onrender.com/attendance/attendance/mark/$employeeId');
 
     var body = {
       'date': getCurrentDate(),
@@ -127,7 +128,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
     final employeeId =
         Provider.of<UserProvider>(context, listen: false).employeeId ?? '';
     var url = Uri.parse(
-        'http://localhost:5000/attendance/attendance/update/$employeeId');
+        'https://hrm-project-2.onrender.com/attendance/attendance/update/$employeeId');
 
     var body = {
       'date': getCurrentDate(),
@@ -163,7 +164,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
       final employeeId =
           Provider.of<UserProvider>(context, listen: false).employeeId ?? '';
       var url = Uri.parse(
-          'http://localhost:5000/attendance/attendance/history/$employeeId');
+          'https://hrm-project-2.onrender.com/attendance/attendance/history/$employeeId');
       var response = await http.get(url);
 
       if (response.statusCode == 200) {

@@ -52,7 +52,7 @@ String? employeeImage; // ✅ new variable
 
   try {
     final response = await http.get(
-      Uri.parse('http://localhost:5000/get-employee-name/$employeeId'),
+      Uri.parse('https://hrm-project-2.onrender.com/get-employee-name/$employeeId'),
     );
 
     if (response.statusCode == 200) {
@@ -277,7 +277,7 @@ Widget _buildSidebar(BuildContext context) {
          leading: CircleAvatar(
     radius: 25,
     backgroundImage: employeeImage != null
-        ? NetworkImage('http://localhost:5000${employeeImage!}')
+        ? NetworkImage('https://hrm-project-2.onrender.com${employeeImage!}')
         : const AssetImage('assets/profile.png') as ImageProvider,
   ),
   title: Text(

@@ -8,6 +8,7 @@ import 'user_provider.dart';
 import 'package:provider/provider.dart';
 import 'sidebar.dart';
 
+
 class SuperadminPerformancePage extends StatefulWidget {
   const SuperadminPerformancePage({super.key});
 
@@ -83,7 +84,7 @@ class _SuperadminPerformancePageState extends State<SuperadminPerformancePage> {
       return;
     }
 
-    final url = Uri.parse('http://localhost:5000/reviews');
+    final url = Uri.parse('https://hrm-project-2.onrender.com/reviews');
     setState(() => _isloading = true);
 
     final reviewerName =
@@ -119,7 +120,7 @@ class _SuperadminPerformancePageState extends State<SuperadminPerformancePage> {
 
         // 🔔 Add notifications (one for employee, one for admin)
         String currentMonth = getCurrentMonth();
-        final notifUrl = Uri.parse("http://localhost:5000/notifications");
+        final notifUrl = Uri.parse("https://hrm-project-2.onrender.com/notifications");
         final userProvider = Provider.of<UserProvider>(context, listen: false);
         final adminId = userProvider.employeeId ?? 'superadmin';
         final adminName = userProvider.employeeName ?? 'Super Admin';

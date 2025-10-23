@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
+
 class LeaveList extends StatefulWidget {
   const LeaveList({super.key});
 
@@ -17,7 +18,7 @@ class _LeaveListState extends State<LeaveList> {
   Future<void> fetchLeaves() async {
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:5000/api/leave'), // Android emulator
+        Uri.parse('https://hrm-project-2.onrender.com/api/leave'), // Android emulator
         headers: {'Content-Type': 'application/json'},
       );
 

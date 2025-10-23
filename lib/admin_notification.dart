@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'reports.dart';
 import 'sidebar.dart';
 
+
 class AdminNotificationsPage extends StatefulWidget {
   final String empId;
   const AdminNotificationsPage({required this.empId, super.key});
@@ -138,7 +139,7 @@ class _AdminNotificationsPageState extends State<AdminNotificationsPage> {
   /// 🔹 Fetch SMS Notifications
   Future<void> fetchSmsNotifications() async {
     final uri = Uri.parse(
-      "http://localhost:5000/notifications/employee/${widget.empId}?month=$selectedMonth&category=messages",
+      "https://hrm-project-2.onrender.com/notifications/employee/${widget.empId}?month=$selectedMonth&category=messages",
     );
     final resp = await http.get(uri);
 
@@ -162,7 +163,7 @@ class _AdminNotificationsPageState extends State<AdminNotificationsPage> {
   /// 🔹 Fetch Performance Notifications
   Future<void> fetchPerformanceNotifications() async {
     final uri = Uri.parse(
-      "http://localhost:5000/notifications/performance/employee/$selectedMonth/${widget.empId}",
+      "https://hrm-project-2.onrender.com/notifications/performance/employee/$selectedMonth/${widget.empId}",
     );
 
     final resp = await http.get(uri);
@@ -203,7 +204,7 @@ class _AdminNotificationsPageState extends State<AdminNotificationsPage> {
 
   Future<void> fetchHolidayNotifications() async {
     final uri = Uri.parse(
-      "http://localhost:5000/notifications/holiday/admin/$selectedMonth",
+      "https://hrm-project-2.onrender.com/notifications/holiday/admin/$selectedMonth",
     );
 
     final resp = await http.get(uri);
