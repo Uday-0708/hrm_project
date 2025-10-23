@@ -1,21 +1,21 @@
 #!/bin/bash
-
-# Exit immediately if a command exits with a non-zero status
 set -e
-
-# Print each command before executing (for easier Netlify logs)
 set -x
 
-# Clone the Flutter SDK (stable channel)
-git clone https://github.com/flutter/flutter.git -b stable
+# Clone Flutter only if it doesn't exist
+if [ ! -d "flutter" ]; then
+  git clone https://github.com/flutter/flutter.git -b stable
+else
+  echo "Flutter SDK already exists, skipping clone"
+fi
 
-# Add Flutter to PATH for this session
+# Add Flutter to PATH
 export PATH="$PATH:`pwd`/flutter/bin"
 
 # Check Flutter installation
 flutter doctor
 
-# Enable web support just to be sure
+# Enable web support
 flutter config --enable-web
 
 # Get dependencies
