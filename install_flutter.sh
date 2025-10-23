@@ -1,20 +1,22 @@
 #!/bin/bash
 
-# Exit if any command fails
+# Exit immediately if a command exits with a non-zero status
 set -e
 
-# Clone Flutter if not already cached
-if [ ! -d "$HOME/flutter" ]; then
-  git clone https://github.com/flutter/flutter.git -b stable $HOME/flutter
-else
-  echo "Flutter already cached"
-fi
+# Print each command before executing (for easier Netlify logs)
+set -x
 
-# Add Flutter to PATH
-export PATH="$HOME/flutter/bin:$PATH"
+# Clone the Flutter SDK (stable channel)
+git clone https://github.com/flutter/flutter.git -b stable
 
-# Check Flutter version
-flutter --version
+# Add Flutter to PATH for this session
+export PATH="$PATH:`pwd`/flutter/bin"
 
-# Pre-download web dependencies
-flutter precache --web
+# Check Flutter installation
+flutter doctor
+
+# Enable web support just to be sure
+flutter config --enable-web
+
+# Get dependencies
+flutter pub get

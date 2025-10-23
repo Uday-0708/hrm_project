@@ -1,22 +1,11 @@
-[build.lifecycle]
-  onPreBuild = "git clone https://github.com/flutter/flutter.git -b stable && export PATH=\"$PATH:`pwd`/flutter/bin\""
-
 [build]
-  # Command Netlify runs to build your Flutter web app
-  command = "bash ./install_flutter.sh && flutter build web"
-  # The directory Netlify will serve as your website
+  # Build command: install Flutter and build the web app
+  command = "bash ./install_flutter.sh && export PATH=\"$PATH:`pwd`/flutter/bin\" && flutter build web"
+  # Directory Netlify will serve
   publish = "build/web"
 
-[build.environment]
-  # Flutter version (change this to your version)
-  FLUTTER_VERSION = "3.24.3"
-
-[[plugins]]
-  # Ensures proper handling of single-page Flutter apps
-  package = "@netlify/plugin-nextjs"
-
 [[redirects]]
-  # Redirects all routes to index.html (important for Flutter web routing)
+  # Flutter web routing: redirect all routes to index.html
   from = "/*"
   to = "/index.html"
   status = 200
