@@ -1,8 +1,10 @@
 require("dotenv").config();
 const express = require("express");
+const http = require("http");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const path = require("path");
+const { Server } = require("socket.io");
  
 // ---------------- MODELS ---------------- //
 const Employee = require("./models/employee");
@@ -28,6 +30,16 @@ const payslipRoutes = require("./routes/payslip");
 const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI;
+
+const server = http.createServer(app);
+
+// -------------------- SOCKET.IO -------------------- //
+const io = new Server(server, {
+  cors: {
+    origin: "*", // Replace with your Flutter frontend URL in production
+    methods: ["GET", "POST"]
+  }
+});
  
 // ---------------- MIDDLEWARE ---------------- //
 app.use((req, res, next) => {
@@ -160,6 +172,95 @@ app.get("/get-employee-name/:employeeId", async (req, res) => {
     console.error("❌ Get Employee Name Error:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
+});
+
+// -------------------- SOCKET.IO (ONE-TO-ONE + GROUP CALLS) -------------------- //
+io.on("connection", (socket) => {
+  console.log("🟢 User connected:", socket.id);
+
+  // --- Basic Join ---
+  socket.on("join", (employeeId) => {
+    socket.join(employeeId);
+    console.log(`👤 ${employeeId} joined personal room`);
+  });
+
+  // --- Direct Calls ---
+  socket.on("call-user", (data) => {
+    io.to(data.target).emit("incoming-call", {
+      from: data.from,
+      signal: data.signal,
+    });
+  });
+
+  socket.on("answer-call", (data) => {
+    io.to(data.to).emit("call-accepted", data.signal);
+  });
+
+  socket.on("reject-call", (data) => {
+    const { to, from } = data;
+    if (to) {
+      io.to(to).emit("call-rejected", { from });
+      console.log(`📞 Call rejected by ${from}`);
+    }
+  });
+
+  socket.on("end-call", (data) => {
+    const { to, from } = data;
+    if (to) {
+      io.to(to).emit("call-ended", { from });
+      console.log(`❌ Call ended between ${from} and ${to}`);
+    }
+  });
+
+  // --- ICE Relay ---
+  socket.on("ice-candidate", (data) => {
+    const { to, candidate } = data;
+    if (to && candidate) io.to(to).emit("ice-candidate", { candidate });
+  });
+
+  // --- ROOM HANDLING FOR GROUP CALLS ---
+  socket.on("create-room", (data) => {
+    const { roomId, creator, target, isVideo } = data;
+    socket.join(roomId);
+    io.to(target).emit("incoming-call", {
+      from: creator,
+      signal: { roomId, isVideo },
+    });
+    console.log(`🏠 Room created: ${roomId} by ${creator}`);
+  });
+
+  socket.on("add-participant", (data) => {
+    const { roomId, from, target, isVideo } = data;
+    io.to(target).emit("incoming-call", {
+      from,
+      signal: { roomId, isVideo },
+    });
+    console.log(`👥 ${from} invited ${target} to ${roomId}`);
+  });
+
+  socket.on("join-room", (data) => {
+    const { roomId, userId } = data;
+    socket.join(roomId);
+    socket.to(roomId).emit("new-participant", { userId });
+    console.log(`👤 ${userId} joined room ${roomId}`);
+  });
+
+  socket.on("send-room-signal", (data) => {
+    const { roomId, from, signal } = data;
+    socket.to(roomId).emit("room-signal", { from, signal });
+  });
+
+  socket.on("leave-room", (data) => {
+    const { roomId, userId } = data;
+    socket.leave(roomId);
+    socket.to(roomId).emit("participant-left", { userId });
+    console.log(`🚪 ${userId} left room ${roomId}`);
+  });
+
+  // --- Disconnect ---
+  socket.on("disconnect", () => {
+    console.log("🔴 User disconnected:", socket.id);
+  });
 });
  
 // ---------------- ROOT ROUTE (for testing Render) ---------------- //
