@@ -28,9 +28,6 @@ const payslipRoutes = require("./routes/payslip");
  
 // ---------------- EXPRESS APP SETUP ---------------- //
 const app = express();
-const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI;
-
 const server = http.createServer(app);
 
 // -------------------- SOCKET.IO -------------------- //
@@ -40,6 +37,9 @@ const io = new Server(server, {
     methods: ["GET", "POST"]
   }
 });
+
+const PORT = process.env.PORT || 5000;
+const MONGO_URI = process.env.MONGO_URI;
  
 // ---------------- MIDDLEWARE ---------------- //
 app.use((req, res, next) => {
