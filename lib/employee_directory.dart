@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'sidebar.dart';
+import 'user_provider.dart';
 // import 'email_page.dart';
 import 'message.dart';
-
+import 'audio_call_page.dart';
 
 class EmployeeDirectoryPage extends StatefulWidget {
   const EmployeeDirectoryPage({super.key});
@@ -193,16 +195,53 @@ class EmployeeDirectoryPageState extends State<EmployeeDirectoryPage> {
                 ),
 
                 //Icon(Icons.message, size: 25, color: Colors.deepPurple),
-                Icon(
-                  Icons.phone,
-                  size: 25,
-                  color: Colors.deepPurple.withOpacity(0.5),
+                IconButton(
+                  icon: const Icon(
+                    Icons.phone,
+                    size: 25,
+                    color: Colors.deepPurple,
+                   ),
+                   onPressed: () {
+                         // TODO: replace with your logged-in employee id retrieval
+                     //  const currentUserId = "EMPID"; // <<--- get from Provider / auth
+                     final currentUserId = Provider.of<UserProvider>(context, listen: false).employeeId!;
+                       Navigator.push(
+                         context,
+                         MaterialPageRoute(
+                            builder: (context) => AudioCallPage(
+                              currentUserId: currentUserId,
+                              targetUserId: employeeId,
+                              isCaller: true,
+                              isVideo: false,
+                            ),
+                         ),
+                       );
+                   },
                 ),
-                Icon(
-                  Icons.video_call,
-                  size: 25,
-                  color: Colors.deepPurple.withOpacity(0.5),
-                ),
+
+IconButton(
+  icon: const Icon(
+    Icons.video_call,
+    size: 25,
+    color: Colors.deepPurple,
+            ),
+              onPressed: () {
+                 // TODO: replace with your logged-in employee id retrieval
+               //const currentUserId = "EMPID"; // <<--- get from Provider / auth
+               final currentUserId = Provider.of<UserProvider>(context, listen: false).employeeId!;
+               Navigator.push(
+                 context,
+                 MaterialPageRoute(
+                   builder: (context) => AudioCallPage(
+                     currentUserId: currentUserId,
+                     targetUserId: employeeId,
+                     isCaller: true,
+                     isVideo: true,
+                   ),
+                  ),
+                 );
+                },
+               ),
               ],
             ),
           ],
