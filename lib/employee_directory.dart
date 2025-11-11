@@ -8,6 +8,7 @@ import 'user_provider.dart';
 import 'message.dart';
 import 'audio_call_page.dart';
 
+
 class EmployeeDirectoryPage extends StatefulWidget {
   const EmployeeDirectoryPage({super.key});
 
@@ -216,10 +217,9 @@ class EmployeeDirectoryPageState extends State<EmployeeDirectoryPage> {
                             ),
                          ),
                        );
-                   },
+                   }
                 ),
-
-IconButton(
+                IconButton(
   icon: const Icon(
     Icons.video_call,
     size: 25,
