@@ -33,14 +33,10 @@ const server = http.createServer(app);
 // -------------------- SOCKET.IO -------------------- //
 const io = new Server(server, {
   cors: {
-    origin: [
+    origin: 
       "https://zeaihrm2.netlify.app",
-    ],
     methods: ["GET", "POST"],
-    credentials: true
   },
-  transports: ["websocket", "polling"], // allow websocket + polling fallback
-  allowEIO3: true
 });
 
 // -------------------- CONFIG -------------------- //

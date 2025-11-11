@@ -35,8 +35,6 @@ class CallManager {
       'transports': ['websocket'],
       'autoConnect': true,
       'forceNew': true,
-      'secure': true,
-      'reconnection': true,
     });
 
     socket.onConnect((_) {
