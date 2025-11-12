@@ -9,11 +9,9 @@ import 'apply_leave.dart';
 import 'todo_planner.dart';
 import 'emp_payroll.dart';
 import 'company_events.dart';
-//import 'notification.dart';
 import 'employeenotification.dart';
 import 'attendance_login.dart';
 import 'event_banner_slider.dart';
-
 
 class EmployeeDashboard extends StatefulWidget {
   const EmployeeDashboard({super.key});
@@ -53,7 +51,7 @@ class _EmployeeDashboardState extends State<EmployeeDashboard> {
 
     try {
       final response = await http.get(
-        Uri.parse('https://hrm-project-2.onrender.com/get-employee-name/$employeeId'),
+        Uri.parse('http://localhost:5000/get-employee-name/$employeeId'),
       );
 
       if (response.statusCode == 200) {
@@ -82,7 +80,7 @@ class _EmployeeDashboardState extends State<EmployeeDashboard> {
       }
 
       final year = DateTime.now().year;
-      final url = "https://hrm-project-2.onrender.com/apply/leave-balance/$employeeId?year=$year";
+      final url = "http://localhost:5000/apply/leave-balance/$employeeId?year=$year";
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {

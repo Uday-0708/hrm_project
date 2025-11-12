@@ -1,3 +1,4 @@
+//routes/employee.js
 const express = require("express");
 const mongoose = require("mongoose");
 const multer = require("multer");
@@ -139,6 +140,47 @@ router.get("/employees", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+// ✅ Get employees by domain (for TL performance reviews)
+router.get("/employees/domain/:domain", async (req, res) => {
+  try {
+    const { domain } = req.params;
+    const employees = await Employee.find(
+      {
+        domain: domain,
+        position: { $in: [/^employee$/i, /^intern$/i, /^tech trainee$/i] }, // ✅ Case-insensitive
+      },
+      "employeeId employeeName" // Select only these fields
+    );
+    res.json(employees);
+  } catch (err) {
+    res.status(500).json({ message: "❌ Server error fetching employees by domain" });
+  }
+});
+
+// ✅ Get employees for Superadmin/HR review (only employees and interns)
+router.get("/employees/for-review/:reviewerPosition", async (req, res) => {
+  try {
+    const reviewerPosition = (req.params.reviewerPosition || "").toLowerCase();
+    let positionsToFind = [];
+
+    if (reviewerPosition === 'founder') {
+      // Founder reviews HR
+      positionsToFind = [/^HR$/i,/^TL$/i];
+    } else if (reviewerPosition === 'superadmin' || reviewerPosition === 'hr') {
+      // Superadmin and HR review TLs and Admins
+      positionsToFind = [/^TL$/i, /^Admin$/i];
+    }
+
+    const employees = await Employee.find({
+      position: { $in: positionsToFind }
+    }, "employeeId employeeName");
+    res.json(employees);
+  } catch (err) {
+    res.status(500).json({ message: "❌ Server error fetching employees for review" });
+  }
+});
+
 
 // ✅ Get single employee
 router.get("/employees/:employeeId", async (req, res) => {

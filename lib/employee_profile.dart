@@ -12,7 +12,6 @@ import 'package:http_parser/http_parser.dart';
 import 'sidebar.dart';
 import 'user_provider.dart';
 
-
 /// 🔹 Employee model with profileDocs paths
 class Employee {
   final String companyName;
@@ -277,7 +276,7 @@ class _EmployeeProfilePageState extends State<EmployeeProfilePage> {
 
     try {
       final response = await http.get(
-        Uri.parse('https://hrm-project-2.onrender.com/profile/$employeeId'),
+        Uri.parse('http://localhost:5000/profile/$employeeId'),
       );
       if (response.statusCode == 200) {
         setState(() {
@@ -304,7 +303,7 @@ class _EmployeeProfilePageState extends State<EmployeeProfilePage> {
 
     try {
       final url =
-          Uri.parse('https://hrm-project-2.onrender.com/requests/profile/$employeeId/request-change');
+          Uri.parse('http://localhost:5000/requests/profile/$employeeId/request-change');
       final body = jsonEncode({
         'fullName': employee?.fullName ?? '', 
         'field': field,
@@ -369,7 +368,7 @@ class _EmployeeProfilePageState extends State<EmployeeProfilePage> {
   if (employeeId == null) return;
 
   try {
-    final uri = Uri.parse("apiBaseUrl/upload/$employeeId");
+    final uri = Uri.parse("http://localhost:5000/upload/$employeeId");
     final request = http.MultipartRequest('POST', uri);
 
     // Determine a simple contentType based on extension (avoid adding extra package)
@@ -583,7 +582,7 @@ class _EmployeeProfilePageState extends State<EmployeeProfilePage> {
                   Provider.of<UserProvider>(context, listen: false).employeeId;
               await http.post(
                 Uri.parse(
-                    'https://hrm-project-2.onrender.com/profile/$employeeId/experience'),
+                    'http://localhost:5000/profile/$employeeId/experience'),
                 headers: {'Content-Type': 'application/json'},
                 body: jsonEncode(experience),
               );
@@ -636,7 +635,7 @@ class _EmployeeProfilePageState extends State<EmployeeProfilePage> {
                 if (hasFile)
                   TextButton(
                     onPressed: () async {
-                      final url = "ahttps://hrm-project-2.onrender.com$filePath";
+                      final url = "http://localhost:5000$filePath";
                       if (await canLaunchUrl(Uri.parse(url))) {
                         await launchUrl(Uri.parse(url),
                             mode: LaunchMode.externalApplication);
@@ -811,7 +810,6 @@ class _EmployeeProfilePageState extends State<EmployeeProfilePage> {
             if (employeeId == null) return;
 
             final updatedExp = {
-              
               "company_name": companyController.text,
               "role": roleController.text,
               "start_date": startdateController.text,
@@ -822,7 +820,7 @@ class _EmployeeProfilePageState extends State<EmployeeProfilePage> {
             try {
               final response = await http.put(
                 Uri.parse(
-                    'https://hrm-project-2.onrender.com/profile/$employeeId/experience/${exp.id}'),
+                    'http://localhost:5000/profile/$employeeId/experience/${exp.id}'),
                 headers: {'Content-Type': 'application/json'},
                 body: jsonEncode(updatedExp),
               );
@@ -867,7 +865,7 @@ class _EmployeeProfilePageState extends State<EmployeeProfilePage> {
 
   try {
     final response = await http.delete(
-      Uri.parse('https://hrm-project-2.onrender.com/profile/$employeeId/experience/${exp.id}'),
+      Uri.parse('http://localhost:5000/profile/$employeeId/experience/${exp.id}'),
     );
 
     if (response.statusCode == 200) {

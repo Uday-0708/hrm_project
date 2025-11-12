@@ -36,7 +36,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: 
-      "https://zeaihrm2.netlify.app",
+      "https://zeai-soft-hrm.netlify.app",
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
   },
@@ -51,7 +51,7 @@ app.use((req, res, next) => {
 app.use(
   cors({
     origin: [
-      "https://zeaihrm2.netlify.app",
+      "https://zeai-soft-hrm.netlify.app",
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,

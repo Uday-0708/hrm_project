@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:provider/provider.dart';
@@ -11,7 +10,6 @@ import 'package:zeai_project/superadmin_dashboard.dart' as superadmin;
 
 import 'user_provider.dart';
 import 'call_listener.dart';
-
 
 class LoginApp extends StatelessWidget {
   const LoginApp({super.key});
@@ -31,7 +29,10 @@ class LoginPage extends StatefulWidget {
 
 // ✅ Save login session function
 Future<void> saveLoginSession(
-    String employeeId, String employeeName, String position) async {
+  String employeeId,
+  String employeeName,
+  String position,
+) async {
   final prefs = await SharedPreferences.getInstance();
   await prefs.setString('employeeId', employeeId);
   await prefs.setString('employeeName', employeeName);
@@ -71,7 +72,9 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final response = await http.post(
-        Uri.parse('https://hrm-project-2.onrender.com/api/employee-login'), 
+        Uri.parse(
+          'http://localhost:5000/api/employee-login',
+        ), //change youur render url here!
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'employeeId': employeeIdController.text.trim(),
@@ -92,43 +95,43 @@ class _LoginPageState extends State<LoginPage> {
         );
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          final userProvider =
-              Provider.of<UserProvider>(context, listen: false);
+          final userProvider = Provider.of<UserProvider>(
+            context,
+            listen: false,
+          );
           userProvider.setEmployeeId(employeeIdController.text.trim());
           userProvider.setEmployeeName(employeeNameController.text.trim());
           userProvider.setPosition(positionController.text.trim());
 
           // ✅ Navigate after provider is updated
-          if (position == "Admin") {
+          if (position == "TL") {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                  builder: (context) => CallListener(
+                builder: (context) => CallListener(
         currentUserId: employeeIdController.text.trim(),
         child: const admin.AdminDashboard(),
-                  ),
-            ),
+                ),
+              ),
             );
-          } else if (position == "Founder"||position == "HR") {
+          } else if (position == "Founder" || position == "HR") {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                  builder: (context) => CallListener(
+                builder: (context) => CallListener(
         currentUserId: employeeIdController.text.trim(),
         child: const superadmin.SuperAdminDashboard(),
-        ),
+                ),
               ),
             );
-            
-            
           } else {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                  builder: (context) => CallListener(
+                builder: (context) => CallListener(
         currentUserId: employeeIdController.text.trim(),
         child: const employee.EmployeeDashboard(),
-        ),
+                ),
               ),
             );
           }
@@ -138,8 +141,9 @@ class _LoginPageState extends State<LoginPage> {
           context: context,
           builder: (context) => AlertDialog(
             title: const Text("Invalid Credentials ❌"),
-            content:
-                const Text("Please check your Employee ID, Name, or Position."),
+            content: const Text(
+              "Please check your Employee ID, Name, or Position.",
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
@@ -198,7 +202,7 @@ class _LoginPageState extends State<LoginPage> {
 
           return Column(
             children: [
-              // ✅ Top Navbar
+              // ✅ Top Navbar (search removed)
               Container(
                 height: 80,
                 decoration: const BoxDecoration(
@@ -209,50 +213,20 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 child: Row(
-                  children: [
-                    const SizedBox(width: 16),
-                    const FaIcon(FontAwesomeIcons.chevronLeft,
-                        color: Colors.white, size: 30),
-                    const SizedBox(width: 16),
-                    const FaIcon(FontAwesomeIcons.chevronRight,
-                        color: Colors.white, size: 30),
-                    const SizedBox(width: 18),
-                    const Image(
-                        image: AssetImage('assets/logo_z.png'),
-                        width: 40,
-                        height: 40),
-                    const SizedBox(width: 70),
-                    const Spacer(),
-                    const Image(
-                        image: AssetImage('assets/logo_zeai.png'),
-                        width: 140,
-                        height: 140),
-                    const Spacer(),
-                    Container(
-                      width: 300,
-                      padding: const EdgeInsets.symmetric(horizontal: 6),
-                      child: TextField(
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          hintText: 'Search here..',
-                          hintStyle: const TextStyle(
-                            color: Colors.white70,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          filled: true,
-                          fillColor: const Color(0xFF2C2C3E),
-                          suffixIcon: const Icon(FontAwesomeIcons.magnifyingGlass,
-                              color: Colors.white),
-                          contentPadding: const EdgeInsets.only(
-                              left: 20, top: 16, bottom: 16),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                        ),
-                      ),
+                  children: const [
+                    SizedBox(width: 16),
+                    Image(
+                      image: AssetImage('assets/logo_z.png'),
+                      width: 100,
+                      height: 50,
                     ),
-                    const SizedBox(width: 16),
+                    Spacer(),
+                    Image(
+                      image: AssetImage('assets/logo_zeai.png'),
+                      width: 140,
+                      height: 140,
+                    ),
+                    SizedBox(width: 700),
                   ],
                 ),
               ),
@@ -298,25 +272,36 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                               ),
                               const SizedBox(height: 24),
-                              buildTextFieldRow("Employee ID :",
-                                  "Enter_id", employeeIdController),
+                              buildTextFieldRow(
+                                "Employee ID :",
+                                "Enter_id",
+                                employeeIdController,
+                              ),
                               const SizedBox(height: 16),
-                              buildTextFieldRow("Employee Name :",
-                                  "Enter_Name", employeeNameController),
+                              buildTextFieldRow(
+                                "Employee Name :",
+                                "Enter_Name",
+                                employeeNameController,
+                              ),
                               const SizedBox(height: 16),
-                              buildTextFieldRow("Position :",
-                                  "Enter_position", positionController),
+                              buildTextFieldRow(
+                                "Position :",
+                                "Enter_position",
+                                positionController,
+                              ),
                               const SizedBox(height: 30),
 
                               SizedBox(
                                 width: 100,
                                 child: ElevatedButton(
-                                  onPressed:
-                                      isLoading ? null : sendLoginDetails,
+                                  onPressed: isLoading
+                                      ? null
+                                      : sendLoginDetails,
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: const Color(0xFF171A30),
                                     padding: const EdgeInsets.symmetric(
-                                        vertical: 20),
+                                      vertical: 20,
+                                    ),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(8),
                                     ),
@@ -333,8 +318,9 @@ class _LoginPageState extends State<LoginPage> {
                                       : const Text(
                                           'Login',
                                           style: TextStyle(
-                                              fontSize: 16,
-                                              color: Colors.white),
+                                            fontSize: 16,
+                                            color: Colors.white,
+                                          ),
                                         ),
                                 ),
                               ),
@@ -354,7 +340,10 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Widget buildTextFieldRow(
-      String label, String hint, TextEditingController controller) {
+    String label,
+    String hint,
+    TextEditingController controller,
+  ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [

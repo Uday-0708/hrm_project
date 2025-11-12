@@ -5,7 +5,6 @@ import 'package:http/http.dart' as http;
 import 'reports.dart';
 import 'sidebar.dart';
 
-
 class EmployeeNotificationsPage extends StatefulWidget {
   final String empId; // ✅ required employee ID
 
@@ -26,6 +25,7 @@ class _EmployeeNotificationsPageState extends State<EmployeeNotificationsPage> {
   // 🔴 red: use expandedKey instead of expandedIndex
   String? expandedKey;
 
+
   final List<String> months = [
     "January",
     "February",
@@ -40,7 +40,7 @@ class _EmployeeNotificationsPageState extends State<EmployeeNotificationsPage> {
     "November",
     "December",
   ];
-  List<Map<String, dynamic>> messages = [];
+  List<Map<String, dynamic>> message = [];
   List<Map<String, dynamic>> performance = [];
   //List<Map<String, dynamic>> meetings = [];
   //List<Map<String, dynamic>> events = [];
@@ -52,13 +52,12 @@ class _EmployeeNotificationsPageState extends State<EmployeeNotificationsPage> {
     selectedMonth = months[DateTime.now().month - 1];
     fetchNotifs();
   }
-
   /// 🔹 Main function -> call both API
   Future<void> fetchNotifs() async {
     setState(() {
       isLoading = true;
       error = null;
-      messages.clear();
+      message.clear();
       performance.clear();
       //meetings.clear();
       //events.clear();
@@ -67,18 +66,19 @@ class _EmployeeNotificationsPageState extends State<EmployeeNotificationsPage> {
       // 🔴 red: reset expandedKey on refresh
       expandedKey = null;
     });
-    /*
+/*
     final uri = Uri.parse(
       //"http://localhost:5000/notifications/$selectedMonth/${widget.empId}",
       "http://localhost:5000/api/notifications/employee/${widget.empId}",
     );
     */
     try {
-      // 🔹 Call all APIs parallel
+      // 🔹 Call both APIs parallel
       await Future.wait([
         fetchSmsNotifications(),
         fetchPerformanceNotifications(),
-        fetchHolidayNotifications(), // 🔹 new function for holidays
+        fetchHolidayNotifications(),
+        // Future-la meetings/events/holiday/s ku separate API add panna easy
       ]);
     } catch (e) {
       setState(() => error = "Server/network error: $e");
@@ -87,36 +87,35 @@ class _EmployeeNotificationsPageState extends State<EmployeeNotificationsPage> {
     }
   }
 
+
   /// 🔹 Fetch SMS Notifications
   Future<void> fetchSmsNotifications() async {
     final uri = Uri.parse(
-      "https://hrm-project-2.onrender.com/notifications/employee/${widget.empId}?month=$selectedMonth&category=messages",
-    );
+        "http://localhost:5000/notifications/employee/${widget.empId}?month=$selectedMonth&category=message");
     final resp = await http.get(uri);
 
     if (resp.statusCode == 200) {
       final decoded = jsonDecode(resp.body);
       if (decoded is List) {
         setState(() {
-          messages = decoded.cast<Map<String, dynamic>>();
+          message = decoded.cast<Map<String, dynamic>>();
         });
       }
     } else if (resp.statusCode == 404) {
-      // 🔹 No SMS → empty list
-      setState(() => messages = []);
-    } else {
+    // 🔹 No SMS → empty list
+    setState(() => message = []);
+  } else {
       throw Exception(
-        "Failed to load SMS notifications. Code: ${resp.statusCode}",
-      );
+          "Failed to load Message notifications. Code: ${resp.statusCode}");
     }
   }
+
 
   /// 🔹 Fetch Performance Notifications
   Future<void> fetchPerformanceNotifications() async {
     final uri = Uri.parse(
-      // "http://localhost:5000/api/notifications/$selectedMonth/${widget.empId}");
-      "https://hrm-project-2.onrender.com/notifications/performance/employee/$selectedMonth/${widget.empId}",
-    );
+       // "http://localhost:5000/api/notifications/$selectedMonth/${widget.empId}");
+       "http://localhost:5000/notifications/performance/employee/$selectedMonth/${widget.empId}");
     final resp = await http.get(uri);
 
     if (resp.statusCode == 200) {
@@ -124,34 +123,38 @@ class _EmployeeNotificationsPageState extends State<EmployeeNotificationsPage> {
       if (decoded is List) {
         setState(() {
           performance =
-              decoded
-                  .where(
-                    (n) =>
-                        (n['category'] as String).toLowerCase() ==
-                        'performance',
-                  )
-                  .cast<Map<String, dynamic>>()
-                  .toList();
+                decoded
+                    .where(
+                      (n) =>
+                          (n['category'] as String).toLowerCase() ==
+                          'performance',
+                    )
+                    .cast<Map<String, dynamic>>()
+                    .toList();
 
-          // 🔹 removed holidays assignment from here
-          // performance = decoded.cast<Map<String, dynamic>>(); // no longer needed
+                    holidays =
+                decoded
+                    .where(
+                      (n) =>
+                          (n['category'] as String).toLowerCase() == 'holiday',
+                    )
+                    .cast<Map<String, dynamic>>()
+                    .toList();
+          performance = decoded.cast<Map<String, dynamic>>();
         });
       }
     } else if (resp.statusCode == 404) {
-      // 🔹 No Performance → empty list
-      setState(() => performance = []);
-    } else {
+    // 🔹 No Performance → empty list
+    setState(() => performance = []);
+  } else {
       throw Exception(
-        "Failed to load Performance notifications. Code: ${resp.statusCode}",
-      );
+          "Failed to load Performance notifications. Code: ${resp.statusCode}");
     }
   }
-
   /// 🔹 Fetch Holiday Notifications
   Future<void> fetchHolidayNotifications() async {
     final uri = Uri.parse(
-      "https://hrm-project-2.onrender.com/notifications/holiday/employee/${widget.empId}?month=$selectedMonth",
-    );
+        "http://localhost:5000/notifications/holiday/employee/${widget.empId}?month=$selectedMonth");
     final resp = await http.get(uri);
 
     if (resp.statusCode == 200) {
@@ -166,10 +169,10 @@ class _EmployeeNotificationsPageState extends State<EmployeeNotificationsPage> {
       setState(() => holidays = []);
     } else {
       throw Exception(
-        "Failed to load Holiday notifications. Code: ${resp.statusCode}",
-      );
+          "Failed to load Holiday notifications. Code: ${resp.statusCode}");
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -208,7 +211,7 @@ class _EmployeeNotificationsPageState extends State<EmployeeNotificationsPage> {
                       ),
                     )
                   else ...[
-                    notificationCategory("Message", messages),
+                    notificationCategory("Message", message),
                     notificationCategory("Performance", performance),
                     // notificationCategory("Meetings", meetings),
                     // notificationCategory("Company Events", events),
@@ -282,81 +285,143 @@ class _EmployeeNotificationsPageState extends State<EmployeeNotificationsPage> {
         else
           ...list.asMap().entries.map((entry) {
             final index = entry.key;
+            //final message = entry.value['message'] as String;
+            //return notificationCard(message, index, title);
             final notif = entry.value; // full notification map
-            return notificationCard(notif, index, title.toLowerCase());
+            return notificationCard(notif,index,title.toLowerCase());
           }),
       ],
     );
   }
-
-  // 🔴 red: updated notificationCard with expandedKey & sender info
-  Widget notificationCard(
-    Map<String, dynamic> notif,
-    int index,
-    String categoryParam,
-  ) {
+// 🔴 red: updated notificationCard with expandedKey & sender info
+  //Widget notificationCard(String message, int index, String category) {
+  Widget notificationCard(Map<String, dynamic> notif, int index,String categoryParam) {
+    //final isExpanded = expandedIndex == index;
     final cardKey = "$categoryParam-$index"; // 🔴 unique key per notification
     final isExpanded = expandedKey == cardKey;
     final message = notif['message'] as String;
-    final category = (notif['category'] as String).toLowerCase();
-    final senderName =
-        notif['senderName'] ?? 'Unknown'; // 🔴 red: added senderName
-    final senderId = notif['senderId'] ?? '';
-
-    if (category.toLowerCase() == "messages") {
-      return Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        child: Material(
-          color: Colors.white,
-          elevation: 2,
-          child: InkWell(
-            onTap:
-                () => setState(() => expandedKey = isExpanded ? null : cardKey),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "From: $senderName ($senderId)",
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          message,
-                          style: const TextStyle(fontSize: 14),
-                          maxLines: isExpanded ? null : 1,
-                          overflow:
-                              isExpanded
-                                  ? TextOverflow.visible
-                                  : TextOverflow.ellipsis,
-                        ),
-                        if (isExpanded) const SizedBox(height: 8),
-                        if (isExpanded)
-                          Text(
-                            "Click again to collapse",
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
-                          ),
-                      ],
+    
+   final category = (notif['category'] as String).toLowerCase();
+   
+    final senderName = notif['senderName'] ?? 'Unknown'; // 🔴 red: added senderName
+    final senderId = notif['senderId'] ?? ''; 
+    
+if (category.toLowerCase() == "message") {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: Material(
+        color: Colors.white,
+        elevation: 2,
+        child: InkWell(
+          onTap:
+              //() => setState(() => expandedIndex = isExpanded ? null : index),
+              () => setState(() => expandedKey = isExpanded ? null : cardKey),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "From: $senderName ($senderId)",
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
                     ),
+                    const SizedBox(height: 4),
+                    // 🔹 Second line -> Message
+                    Text(
+                      message,
+                        //message,
+                        //"$message\nFrom: $senderName ($senderId)", // 🔴 red: include sender info
+                        style: const TextStyle(fontSize: 14),
+                        //color: Colors.black87,
+                        maxLines: isExpanded ? null : 1,
+                        overflow:
+                            isExpanded
+                                ? TextOverflow.visible
+                                : TextOverflow.ellipsis,
+                      ),
+                      if (isExpanded) const SizedBox(height: 8),
+                      if (isExpanded)
+                        Text(
+                          "Click again to collapse",
+                          //"From: $senderName ($senderId)", // 🔴 red: separate sender info
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+                /*
+                // ✅ Only show "View" for SMS in SMS list
+                if ((category == "sms" && sms.contains(notif)) ||
+                  (category == "performance" && performance.contains(notif)))
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ReportsAnalyticsPage(),
+                        ),
+                      );
+                    },
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text("View"),
+                  ),
+                  */
+/*
+                  if(category.toLowerCase() == "performance")
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ReportsAnalyticsPage(),
+                        ),
+                      );
+                    },
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text("View"),
+                  ),
+
+
+
+*/
+
+              ],
             ),
           ),
         ),
-      );
-    }
+      ),
+    );
+  }
 
-    // Performance & Holidays
+  //Performance
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: Material(
@@ -366,6 +431,7 @@ class _EmployeeNotificationsPageState extends State<EmployeeNotificationsPage> {
         child: InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap:
+              //() => setState(() => expandedIndex = isExpanded ? null : index),
               () => setState(() => expandedKey = isExpanded ? null : cardKey),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -417,6 +483,7 @@ class _EmployeeNotificationsPageState extends State<EmployeeNotificationsPage> {
       ),
     );
   }
+  
 
   Widget _buildHeader() {
     return Container(

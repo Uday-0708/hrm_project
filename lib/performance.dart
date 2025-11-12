@@ -4,7 +4,6 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'sidebar.dart';
 
-
 class Performance extends StatefulWidget {
   const Performance({super.key});
 
@@ -24,7 +23,7 @@ class _PerformanceState extends State<Performance> {
   }
 
   Future<void> fetchPerformanceData() async {
-    var url = Uri.parse('https://hrm-project-2.onrender.com/perform/performance/all');
+    var url = Uri.parse('http://localhost:5000/perform/performance/all');
 
     try {
       var response = await http.get(url);

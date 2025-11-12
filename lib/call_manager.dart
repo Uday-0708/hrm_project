@@ -1,4 +1,3 @@
-// lib/call_manager.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
@@ -36,7 +35,6 @@ class CallManager {
       'transports': ['websocket'],
       'autoConnect': true,
       'forceNew': true,
-      'secure': true,
     });
 
     socket.onConnect((_) {
@@ -110,17 +108,7 @@ class CallManager {
   ) async {
     final configuration = <String, dynamic>{
       'iceServers': [
-        {'urls': 'stun:stun.l.google.com:19302'},
-        {
-        'urls': 'turn:openrelay.metered.ca:80',
-        'username': 'openrelayproject',
-        'credential': 'openrelayproject'
-      },
-      {
-        'urls': 'turn:openrelay.metered.ca:443',
-        'username': 'openrelayproject',
-        'credential': 'openrelayproject'
-      },
+        {'urls': 'stun:stun.l.google.com:19302'}
       ]
     };
 

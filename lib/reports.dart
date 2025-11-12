@@ -7,7 +7,6 @@ import 'user_provider.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:intl/intl.dart';
 
-
 // ---------------- Model ----------------
 class PerformanceReview {
   final String id;
@@ -68,13 +67,13 @@ class ReportsAnalyticsPage extends StatefulWidget {
 }
 
 class _ReportsAnalyticsPageState extends State<ReportsAnalyticsPage> {
-  final String apiBase = 'https://hrm-project-2.onrender.com';
+  final String apiBase = 'http://localhost:5000';
   final String listPath = '/reports';
   final String detailsPath = '/reports';
 
   List<PerformanceReview> _reviews = [];
   bool _loadingList = true;
-  bool _dataFetched = false;
+   //bool _dataFetched = false;
 
   int workProgress = 0;
   int leaveUsed = 0;
@@ -84,17 +83,9 @@ class _ReportsAnalyticsPageState extends State<ReportsAnalyticsPage> {
   @override
   void initState() {
     super.initState();
-    if (!_dataFetched) {
-      final userProvider = Provider.of<UserProvider>(context, listen: false);
-      final empId = userProvider.employeeId ?? '';
-
-      if (empId.isNotEmpty) {
-        fetchPerformanceReviews(empId);
-        fetchWorkProgress(empId);
-        fetchLeaveStats(empId);
-        _dataFetched = true;
-      }
-    }
+    fetchPerformanceReviews();
+    fetchWorkProgress();
+    fetchLeaveStatus();
   }
 
   // ✅ Fetch performance list
@@ -154,32 +145,31 @@ class _ReportsAnalyticsPageState extends State<ReportsAnalyticsPage> {
     }
     return null;
   }
+// ✅ Send decision helper
+Future<void> _sendDecision({
+  required String decision,
+  required String comment,
+  required Map<String, dynamic> reviewData,
+  required PerformanceReview review,
+}) async {
+  final userProvider = Provider.of<UserProvider>(context, listen: false);
 
-  // ✅ Send decision helper
-  Future<void> _sendDecision({
-    required String decision,
-    required String comment,
-    required Map<String, dynamic> reviewData,
-    required PerformanceReview review,
-  }) async {
-    final userProvider = Provider.of<UserProvider>(context, listen: false);
+  final body = json.encode({
+    "employeeId": userProvider.employeeId,
+    "employeeName": userProvider.employeeName,   // ✅ logged-in user name
+    "position": (userProvider.position ?? "employee").toString().trim().toLowerCase(),// ✅ use login role
+    "decision": decision,
+    "comment": comment,
+    "sendTo": ["hr"], 
+    "reviewId": review.id,
+  });
 
-    final body = json.encode({
-      "employeeId": userProvider.employeeId,
-      "employeeName": userProvider.employeeName, // ✅ logged-in user name
-      "position": userProvider.position ?? "employee", // ✅ use login role
-      "decision": decision,
-      "comment": comment,
-      "sendTo": ["hr"],
-      "reviewId": review.id,
-    });
-
-    await http.post(
-      Uri.parse('$apiBase/review-decision'),
-      headers: {"Content-Type": "application/json"},
-      body: body,
-    );
-  }
+  await http.post(
+    Uri.parse('$apiBase/review-decision'),
+    headers: {"Content-Type": "application/json"},
+    body: body,
+  );
+}
 
   // ✅ Show review details with Agree & Disagree
   Future<void> _showReviewDetails(PerformanceReview review) async {
@@ -362,47 +352,56 @@ class _ReportsAnalyticsPageState extends State<ReportsAnalyticsPage> {
   }
 
   // ---------------- Fetch stats ----------------
-  Future<void> fetchWorkProgress(String empId) async {
-    var url = Uri.parse('$apiBase/todo_planner/todo/progress/$empId');
-    try {
-      var response = await http.get(url);
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        setState(() {
-          workProgress = data['progress'] ?? 0;
-        });
-      }
-    } catch (_) {}
+  // ---------------- Fetch stats ----------------
+Future<void> fetchWorkProgress() async {
+  final userProvider = Provider.of<UserProvider>(context, listen: false);
+  final employeeId = userProvider.employeeId ?? '';
+  if (employeeId.isEmpty) return;
+
+  var url = Uri.parse('$apiBase/todo_planner/todo/progress/$employeeId');
+  try {
+    var response = await http.get(url);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      setState(() {
+        workProgress = data['progress'] ?? 0;
+      });
+    }
+  } catch (e) {
+    print('Error fetching work progress: $e');
   }
+}
 
-  Future<void> fetchLeaveStats(String empId) async {
-    var url = Uri.parse('$apiBase/apply/leave-balance/$empId');
-    try {
-      var response = await http.get(url);
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final balances = data['balances'] ?? {};
+Future<void> fetchLeaveStatus() async {
+  final userProvider = Provider.of<UserProvider>(context, listen: false);
+  final employeeId = userProvider.employeeId ?? '';
+  if (employeeId.isEmpty) return;
 
-        int totalUsed =
-            (balances['casual']?['used'] ?? 0) +
-            (balances['sick']?['used'] ?? 0) +
-            (balances['sad']?['used'] ?? 0);
+  var url = Uri.parse('$apiBase/apply/leave-balance/$employeeId'); // updated
+  try {
+    var response = await http.get(url);
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
 
-        setState(() {
-          leaveUsed = totalUsed;
-          int totalLeaves =
-              (balances['casual']?['total'] ?? 0) +
-              (balances['sick']?['total'] ?? 0) +
-              (balances['sad']?['total'] ?? 0);
+      final balances = data['balances'] ?? {};
+      int casualUsed = balances['casual']?['used'] ?? 0;
+      int sickUsed = balances['sick']?['used'] ?? 0;
+      int sadUsed = balances['sad']?['used'] ?? 0;
 
-          double percent =
-              totalLeaves > 0 ? (leaveUsed / totalLeaves) * 100 : 0;
-          leavePercent = percent.toStringAsFixed(0);
-          presentPercent = (100 - percent).toStringAsFixed(0);
-        });
-      }
-    } catch (_) {}
+      int totalUsed = casualUsed + sickUsed + sadUsed;
+      int totalAllowed = 12 * 3; // assuming each type has 12 allowance
+
+      setState(() {
+        leaveUsed = totalUsed;
+        leavePercent = ((totalUsed / totalAllowed) * 100).toStringAsFixed(1);
+        presentPercent = (100 - (totalUsed / totalAllowed * 100)).toStringAsFixed(1);
+      });
+    }
+  } catch (e) {
+    print('Error fetching leave stats: $e');
   }
+}
+
 
   // ---------------- UI ----------------
   @override
@@ -521,7 +520,7 @@ class _ReportsAnalyticsPageState extends State<ReportsAnalyticsPage> {
       child: SingleChildScrollView(
         scrollDirection: Axis.vertical,
         child: DataTable(
-          headingRowColor: MaterialStateColor.resolveWith(
+          headingRowColor: WidgetStateColor.resolveWith(
             (_) => Colors.blueGrey.shade700,
           ),
           columns: const [
@@ -625,15 +624,15 @@ class _ReportsAnalyticsPageState extends State<ReportsAnalyticsPage> {
     );
   }
 
-  String _formatDate(dynamic iso) {
-    if (iso == null) return 'N/A';
-    try {
-      final dt = DateTime.parse(iso.toString()).toLocal();
-      return DateFormat('yyyy-MM-dd hh:mm a').format(dt);
-    } catch (_) {
-      return iso.toString();
-    }
+ String _formatDate(dynamic iso) {
+  if (iso == null) return 'N/A';
+  try {
+    final dt = DateTime.parse(iso.toString()).toLocal();
+    return DateFormat('yyyy-MM-dd hh:mm a').format(dt); // 2025-10-03 12:09 PM
+  } catch (_) {
+    return iso.toString();
   }
+}
 
   void _showSnack(String msg) {
     if (!mounted) return;

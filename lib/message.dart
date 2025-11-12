@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import 'user_provider.dart'; // 🔹 import your provider
 
 
-
 class MsgPage extends StatefulWidget {
   final String employeeId;
   
@@ -31,7 +30,7 @@ class _MsgPageState extends State<MsgPage> {
   Future<void> fetchEmployeeDetails() async {
     try {
       final response = await http.get(
-        Uri.parse("https://hrm-project-2.onrender.com/api/employees/${widget.employeeId}"),
+        Uri.parse("http://localhost:5000/api/employees/${widget.employeeId}"),
       );
 
       if (response.statusCode == 200) {
@@ -89,11 +88,11 @@ class _MsgPageState extends State<MsgPage> {
 
         // 🔴 API ku POST panna
         final response = await http.post(
-          Uri.parse("apiBaseUrl/notifications"),
+          Uri.parse("http://localhost:5000/notifications"),
           headers: {"Content-Type": "application/json"},
           body: json.encode({
             "month": month,
-            "category": "sms", // 🔴 temporary fixed category
+            "category": "message", // 🔴 temporary fixed category
             "message": _msgController.text,
             "empId": widget.employeeId, // 🔴 target employee ID
             "senderName":senderName,   // 🔹 sender Name  // 👈 extra field
@@ -149,7 +148,7 @@ class _MsgPageState extends State<MsgPage> {
                     backgroundImage: (employeeData?['employeeImage'] != null &&
                             employeeData!['employeeImage'].isNotEmpty)
                         ? NetworkImage(
-                            "https://hrm-project-2.onrender.com/uploads/${employeeData!['employeeImage']}")
+                            "http://localhost:5000${employeeData!['employeeImage']}")
                         : const AssetImage("assets/profile.png")
                             as ImageProvider,
                   ),

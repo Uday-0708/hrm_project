@@ -5,15 +5,17 @@ import 'package:http/http.dart' as http;
 import 'reports.dart';
 import 'sidebar.dart';
 
-class AdminNotificationsPage extends StatefulWidget {
-  final String empId;
-  const AdminNotificationsPage({required this.empId, super.key});
+class SuperadminNotificationsPage extends StatefulWidget {
+  final String empId; // ✅ required employee ID
+
+  const SuperadminNotificationsPage({super.key, required this.empId});
 
   @override
-  State<AdminNotificationsPage> createState() => _AdminNotificationsPageState();
+  State<SuperadminNotificationsPage> createState() =>
+      _EmployeeNotificationsPageState();
 }
 
-class _AdminNotificationsPageState extends State<AdminNotificationsPage> {
+class _EmployeeNotificationsPageState extends State<SuperadminNotificationsPage> {
   final Color darkBlue = const Color(0xFF0F1020);
 
   late String selectedMonth;
@@ -22,6 +24,7 @@ class _AdminNotificationsPageState extends State<AdminNotificationsPage> {
   //int? expandedIndex;
   // 🔴 red: use expandedKey instead of expandedIndex
   String? expandedKey;
+
 
   final List<String> months = [
     "January",
@@ -37,7 +40,6 @@ class _AdminNotificationsPageState extends State<AdminNotificationsPage> {
     "November",
     "December",
   ];
-
   List<Map<String, dynamic>> message = [];
   List<Map<String, dynamic>> performance = [];
   //List<Map<String, dynamic>> meetings = [];
@@ -50,28 +52,31 @@ class _AdminNotificationsPageState extends State<AdminNotificationsPage> {
     selectedMonth = months[DateTime.now().month - 1];
     fetchNotifs();
   }
-
+  /// 🔹 Main function -> call both API
   Future<void> fetchNotifs() async {
     setState(() {
       isLoading = true;
       error = null;
       message.clear();
       performance.clear();
-     // meetings.clear();
+      //meetings.clear();
       //events.clear();
       holidays.clear();
       //expandedIndex = null;
       // 🔴 red: reset expandedKey on refresh
       expandedKey = null;
     });
-
-
-try {
+/*
+    final uri = Uri.parse(
+      //"http://localhost:5000/notifications/$selectedMonth/${widget.empId}",
+      "http://localhost:5000/api/notifications/employee/${widget.empId}",
+    );
+    */
+    try {
       // 🔹 Call both APIs parallel
       await Future.wait([
         fetchSmsNotifications(),
         fetchPerformanceNotifications(),
-        fetchHolidayNotifications(),
         // Future-la meetings/events/holiday/s ku separate API add panna easy
       ]);
     } catch (e) {
@@ -108,15 +113,14 @@ try {
   /// 🔹 Fetch Performance Notifications
   Future<void> fetchPerformanceNotifications() async {
     final uri = Uri.parse(
-        //"http://localhost:5000/api/notifications/$selectedMonth/${widget.empId}");
-        "http://localhost:5000/notifications/performance/admin/$selectedMonth/${widget.empId}");
+       // "http://localhost:5000/api/notifications/$selectedMonth/${widget.empId}");
+       "http://localhost:5000/notifications/performance/employee/$selectedMonth/${widget.empId}");
     final resp = await http.get(uri);
 
     if (resp.statusCode == 200) {
       final decoded = jsonDecode(resp.body);
       if (decoded is List) {
         setState(() {
-          //performance = decoded.cast<Map<String, dynamic>>();
           performance =
                 decoded
                     .where(
@@ -126,6 +130,7 @@ try {
                     )
                     .cast<Map<String, dynamic>>()
                     .toList();
+
                     holidays =
                 decoded
                     .where(
@@ -134,7 +139,7 @@ try {
                     )
                     .cast<Map<String, dynamic>>()
                     .toList();
-
+          performance = decoded.cast<Map<String, dynamic>>();
         });
       }
     } else if (resp.statusCode == 404) {
@@ -145,32 +150,33 @@ try {
           "Failed to load Performance notifications. Code: ${resp.statusCode}");
     }
   }
+  /// 🔹 Fetch Holiday Notifications
   Future<void> fetchHolidayNotifications() async {
-  final uri = Uri.parse(
-      "http://localhost:5000/notifications/holiday/admin/$selectedMonth");
-  final resp = await http.get(uri);
+    final uri = Uri.parse(
+        "http://localhost:5000/notifications/holiday/employee/${widget.empId}?month=$selectedMonth");
+    final resp = await http.get(uri);
 
-  if (resp.statusCode == 200) {
-    final decoded = jsonDecode(resp.body);
-    if (decoded is List) {
-      setState(() {
-        holidays = decoded.cast<Map<String, dynamic>>();
-      });
+    if (resp.statusCode == 200) {
+      final decoded = jsonDecode(resp.body);
+      if (decoded is List) {
+        setState(() {
+          holidays = decoded.cast<Map<String, dynamic>>();
+        });
+      }
+    } else if (resp.statusCode == 404) {
+      // 🔹 No Holiday → empty list
+      setState(() => holidays = []);
+    } else {
+      throw Exception(
+          "Failed to load Holiday notifications. Code: ${resp.statusCode}");
     }
-  } else if (resp.statusCode == 404) {
-    // 🔹 No Holiday → empty list
-    setState(() => holidays = []);
-  } else {
-    throw Exception(
-        "Failed to load Holiday notifications. Code: ${resp.statusCode}");
   }
-}
 
 
   @override
   Widget build(BuildContext context) {
     return Sidebar(
-      title: "Admin Notifications",
+      title: "Employee Notifications",
       body: Column(
         children: [
           _buildHeader(),
@@ -204,9 +210,9 @@ try {
                       ),
                     )
                   else ...[
-                    notificationCategory("Performance", performance),
                     notificationCategory("Message", message),
-                    //  notificationCategory("Meetings", meetings),
+                    notificationCategory("Performance", performance),
+                    // notificationCategory("Meetings", meetings),
                     // notificationCategory("Company Events", events),
                     notificationCategory("Holidays", holidays),
                   ],
@@ -233,10 +239,12 @@ try {
           isExpanded: true,
           items:
               months
-                  .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                  .map(
+                    (m) => DropdownMenuItem<String>(value: m, child: Text(m)),
+                  )
                   .toList(),
           onChanged: (val) {
-            if (val != null) {
+            if (val != null && val != selectedMonth) {
               setState(() => selectedMonth = val);
               fetchNotifs();
             }
@@ -276,26 +284,28 @@ try {
         else
           ...list.asMap().entries.map((entry) {
             final index = entry.key;
-            //final msg = entry.value['message'] as String;
-            //return notificationCard(msg, idx, title);
+            //final message = entry.value['message'] as String;
+            //return notificationCard(message, index, title);
             final notif = entry.value; // full notification map
             return notificationCard(notif,index,title.toLowerCase());
           }),
       ],
     );
   }
-
+// 🔴 red: updated notificationCard with expandedKey & sender info
   //Widget notificationCard(String message, int index, String category) {
   Widget notificationCard(Map<String, dynamic> notif, int index,String categoryParam) {
-    
-   // final isExpanded = expandedIndex == index;
-   final cardKey = "$categoryParam-$index"; // 🔴 unique key per notification
+    //final isExpanded = expandedIndex == index;
+    final cardKey = "$categoryParam-$index"; // 🔴 unique key per notification
     final isExpanded = expandedKey == cardKey;
     final message = notif['message'] as String;
-    final category = (notif['category'] as String).toLowerCase();
+    
+   final category = (notif['category'] as String).toLowerCase();
+   
     final senderName = notif['senderName'] ?? 'Unknown'; // 🔴 red: added senderName
-    final senderId = notif['senderId'] ?? ''; // 🔴 red: added senderId
-  if (category.toLowerCase() == "message") {
+    final senderId = notif['senderId'] ?? ''; 
+    
+if (category.toLowerCase() == "message") {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: Material(
@@ -326,11 +336,10 @@ try {
                     // 🔹 Second line -> Message
                     Text(
                       message,
-                        
-                        
                         //message,
                         //"$message\nFrom: $senderName ($senderId)", // 🔴 red: include sender info
                         style: const TextStyle(fontSize: 14),
+                        //color: Colors.black87,
                         maxLines: isExpanded ? null : 1,
                         overflow:
                             isExpanded
@@ -339,7 +348,7 @@ try {
                       ),
                       if (isExpanded) const SizedBox(height: 8),
                       if (isExpanded)
-                         Text(
+                        Text(
                           "Click again to collapse",
                           //"From: $senderName ($senderId)", // 🔴 red: separate sender info
                           style: TextStyle(fontSize: 12, color: Colors.grey),
@@ -347,42 +356,62 @@ try {
                     ],
                   ),
                 ),
+                /*
                 // ✅ Only show "View" for SMS in SMS list
-                // if ((category == "sms" && sms.contains(notif)) ||
-                //   (category == "performance" && performance.contains(notif)))
-                //   TextButton(
-                //     onPressed: () {
-                //       Navigator.push(
-                //         context,
-                //         MaterialPageRoute(
-                //           builder: (c) => ReportsAnalyticsPage(),
-                //         ),
-                //       );
-                //     },
-                //     style: TextButton.styleFrom(
-                //       backgroundColor: Colors.black,
-                //       foregroundColor: Colors.white,
-                //     ),
-                //     child: const Text("View"),
-                //   ),
-/*
-                  if (category.toLowerCase() == "performance")
+                if ((category == "sms" && sms.contains(notif)) ||
+                  (category == "performance" && performance.contains(notif)))
                   TextButton(
                     onPressed: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (c) => ReportsAnalyticsPage(),
+                          builder: (context) => ReportsAnalyticsPage(),
                         ),
                       );
                     },
                     style: TextButton.styleFrom(
                       backgroundColor: Colors.black,
                       foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                     child: const Text("View"),
                   ),
                   */
+/*
+                  if(category.toLowerCase() == "performance")
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ReportsAnalyticsPage(),
+                        ),
+                      );
+                    },
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text("View"),
+                  ),
+
+
+
+*/
+
               ],
             ),
           ),
@@ -391,8 +420,7 @@ try {
     );
   }
 
-
-// Performance
+  //Performance
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: Material(
@@ -454,9 +482,6 @@ try {
       ),
     );
   }
-
-
-
   
 
   Widget _buildHeader() {
@@ -476,5 +501,3 @@ try {
     );
   }
 }
-
-//admin_notification.dart

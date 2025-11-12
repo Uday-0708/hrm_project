@@ -1,3 +1,6 @@
+//super admindashboard.dart
+
+// lib/super_admin_dashboard.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:http/http.dart' as http;
@@ -20,9 +23,9 @@ import 'admin_notification.dart';
 import 'attendance_login.dart';
 import 'event_banner_slider.dart';
 import 'leave_approval.dart';
-import 'superadmin_performance.dart'; // for Performance Review
+//import 'adminperformance.dart'; // for Performance Review
+import 'superadmin_performance.dart'; // ✅ for SuperadminPerformancePageReview
 import 'employee_list.dart';
-
 
 class SuperAdminDashboard extends StatefulWidget {
   const SuperAdminDashboard({super.key});
@@ -68,11 +71,13 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
   }
 
   /// Fetch employee name from backend.
-  /// Attempts the common `/api/employees/:id` route first, then falls back to `/get-employee-name/:id`.
+  /// Attempts the common /api/employees/:id route first, then falls back to /get-employee-name/:id.
   /// Fetch employee name from backend (single endpoint now).
   Future<void> fetchEmployeeName() async {
-    final employeeId =
-        Provider.of<UserProvider>(context, listen: false).employeeId;
+    final employeeId = Provider.of<UserProvider>(
+      context,
+      listen: false,
+    ).employeeId;
 
     if (employeeId == null || employeeId.trim().isEmpty) {
       setState(() => employeeName = null);
@@ -80,7 +85,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
     }
 
     try {
-      final uri = Uri.parse("https://hrm-project-2.onrender.com/api/employees/$employeeId");
+      final uri = Uri.parse("http://localhost:5000/api/employees/$employeeId");
       final resp = await http.get(uri);
 
       if (resp.statusCode == 200) {
@@ -101,8 +106,10 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
   /// Fetch leave balances from backend.
   Future<void> _fetchLeaveBalance() async {
     try {
-      final employeeId =
-          Provider.of<UserProvider>(context, listen: false).employeeId?.trim();
+      final employeeId = Provider.of<UserProvider>(
+        context,
+        listen: false,
+      ).employeeId?.trim();
 
       if (employeeId == null || employeeId.isEmpty) {
         setState(() {
@@ -114,7 +121,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
 
       final year = DateTime.now().year;
       final url =
-          "https://hrm-project-2.onrender.com/apply/leave-balance/$employeeId?year=$year";
+          "http://localhost:5000/apply/leave-balance/$employeeId?year=$year";
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
@@ -147,11 +154,12 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
   }
 
   /// Fetch pending count for a role (used by FutureBuilder)
-  Future<int> fetchPendingCount(String userRole) async {
+  Future<int> fetchPendingCount(String userRole, String employeeId) async {
     try {
       final response = await http.get(
         Uri.parse(
-          "https://hrm-project-2.onrender.com/apply/pending-count?approver=$userRole",
+          // Pass both role and ID to the backend
+          "http://localhost:5000/apply/pending-count?approver=$userRole&approverId=$employeeId",
         ),
       );
 
@@ -172,12 +180,12 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
   Future<void> _deleteEmployeeComment(String id) async {
     try {
       final response = await http.delete(
-        Uri.parse("https://hrm-project-2.onrender.com/review-decision/$id"),
+        Uri.parse("http://localhost:5000/review-decision/$id"),
       );
 
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("🗑️ Comment deleted successfully")),
+          const SnackBar(content: Text("🗑 Comment deleted successfully")),
         );
         Navigator.of(context).pop(); // close current dialog
         await _showEmployeeComments(); // refresh dialog
@@ -195,11 +203,11 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
     }
   }
 
-  /// Employee comments popup (with delete option)
+  /// Employee comments popup
   Future<void> _showEmployeeComments() async {
     try {
       final response = await http.get(
-        Uri.parse("https://hrm-project-2.onrender.com/review-decision"),
+        Uri.parse("http://localhost:5000/review-decision"),
         headers: {"Accept": "application/json"},
       );
 
@@ -208,85 +216,78 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
 
         showDialog(
           context: context,
-          builder:
-              (_) => AlertDialog(
-                title: const Text(
-                  "Employee Feedback",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                content: SizedBox(
-                  width: double.maxFinite,
-                  child:
-                      data.isEmpty
-                          ? const Text("No feedback available yet.")
-                          : ListView.builder(
-                            shrinkWrap: true,
-                            itemCount: data.length,
-                            itemBuilder: (context, index) {
-                              final item = data[index];
-                              return Card(
-                                margin: const EdgeInsets.symmetric(vertical: 6),
-                                child: ListTile(
-                                  leading: Icon(
-                                    item["decision"] == "agree"
-                                        ? Icons.thumb_up
-                                        : Icons.thumb_down,
-                                    color:
-                                        item["decision"] == "agree"
-                                            ? Colors.green
-                                            : Colors.red,
-                                  ),
-                                  title: Text(
-                                    item["employeeName"] ?? "Unknown",
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  subtitle: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(item["position"] ?? ""),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        item["comment"] ?? "",
-                                        style: const TextStyle(
-                                          fontStyle: FontStyle.italic,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Text(
-                                        "Submitted: ${_formatDate(item["createdAt"])}",
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  isThreeLine: true,
-                                  trailing: IconButton(
-                                    icon: const Icon(
-                                      Icons.delete,
-                                      color: Colors.red,
-                                    ),
-                                    tooltip: "Delete Comment",
-                                    onPressed: () async {
-                                      await _deleteEmployeeComment(item["_id"]);
-                                    },
+          builder: (_) => AlertDialog(
+            title: const Text(
+              "Employee Feedback",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: data.isEmpty
+                  ? const Text("No feedback available yet.")
+                  : ListView.builder(
+                      shrinkWrap: true,
+                      itemCount: data.length,
+                      itemBuilder: (context, index) {
+                        final item = data[index];
+                        return Card(
+                          margin: const EdgeInsets.symmetric(vertical: 6),
+                          child: ListTile(
+                            leading: Icon(
+                              item["decision"] == "agree"
+                                  ? Icons.thumb_up
+                                  : Icons.thumb_down,
+                              color: item["decision"] == "agree"
+                                  ? Colors.green
+                                  : Colors.red,
+                            ),
+                            title: Text(
+                              item["employeeName"] ?? "Unknown",
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(item["position"] ?? ""),
+                                const SizedBox(height: 4),
+                                Text(
+                                  item["comment"] ?? "",
+                                  style: const TextStyle(
+                                    fontStyle: FontStyle.italic,
                                   ),
                                 ),
-                              );
-                            },
+                                const SizedBox(height: 4),
+                                Text(
+                                  "Submitted: ${_formatDate(item["createdAt"])}",
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            isThreeLine: true,
+                            trailing: IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              tooltip: "Delete Comment",
+                              onPressed: () async {
+                                await _deleteEmployeeComment(item["_id"]);
+                              },
+                            ),
                           ),
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text("Close"),
-                  ),
-                ],
+                        );
+                      },
+                    ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Close"),
               ),
+            ],
+          ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -325,308 +326,289 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
 
     showDialog(
       context: context,
-      builder:
-          (_) => Dialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+      builder: (_) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
+        child: Container(
+          width: 420,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: const LinearGradient(
+              colors: [Color(0xFF873AB7), Color(0xFF673AB7)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            insetPadding: const EdgeInsets.symmetric(
-              horizontal: 40,
-              vertical: 60,
-            ),
+          ),
+          child: Center(
             child: Container(
-              width: 420,
+              margin: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF873AB7), Color(0xFF673AB7)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Center(
-                child: Container(
-                  margin: const EdgeInsets.all(20),
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: SingleChildScrollView(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      "Add New Employee",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+
+                    // Image Picker
+                    Row(
                       children: [
-                        const Text(
-                          "Add New Employee",
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                        Expanded(
+                          child: TextField(
+                            controller: imageController,
+                            readOnly: true,
+                            decoration: const InputDecoration(
+                              labelText: "Profile Image (.jpg)",
+                              border: OutlineInputBorder(),
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 18),
-
-                        // Image Picker
-                        Row(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: imageController,
-                                readOnly: true,
-                                decoration: const InputDecoration(
-                                  labelText: "Profile Image (.jpg)",
-                                  border: OutlineInputBorder(),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            ElevatedButton(
-                              onPressed: () async {
-                                if (kIsWeb) {
-                                  // Web: pick file as bytes
-                                  final result = await FilePicker.platform
-                                      .pickFiles(
-                                        type: FileType.custom,
-                                        allowedExtensions: ['jpg', 'jpeg'],
-                                        withData: true,
-                                      );
-                                  if (result != null &&
-                                      result.files.single.bytes != null) {
-                                    setState(() {
-                                      _pickedImageBytes =
-                                          result.files.single.bytes;
-                                      // lowercase extension to satisfy Multer
-                                      _pickedFileName =
-                                          result.files.single.name
-                                              .toLowerCase();
-                                      imageController.text = _pickedFileName!;
-                                    });
-                                  }
+                        const SizedBox(width: 10),
+                        ElevatedButton(
+                          onPressed: () async {
+                            if (kIsWeb) {
+                              // Web: pick file as bytes
+                              final result = await FilePicker.platform
+                                  .pickFiles(
+                                    type: FileType.custom,
+                                    allowedExtensions: ['jpg', 'jpeg'],
+                                    withData: true,
+                                  );
+                              if (result != null &&
+                                  result.files.single.bytes != null) {
+                                setState(() {
+                                  _pickedImageBytes = result.files.single.bytes;
+                                  // lowercase extension to satisfy Multer
+                                  _pickedFileName = result.files.single.name
+                                      .toLowerCase();
+                                  imageController.text = _pickedFileName!;
+                                });
+                              }
+                            } else {
+                              // Mobile: pick image from gallery
+                              final picked = await _picker.pickImage(
+                                source: ImageSource.gallery,
+                              );
+                              if (picked != null) {
+                                final lower = picked.path.toLowerCase();
+                                if (lower.endsWith('.jpg') ||
+                                    lower.endsWith('.jpeg')) {
+                                  setState(() {
+                                    _pickedImageFile = File(picked.path);
+                                    _pickedFileName = picked.name.toLowerCase();
+                                    imageController.text = picked.name;
+                                  });
                                 } else {
-                                  // Mobile: pick image from gallery
-                                  final picked = await _picker.pickImage(
-                                    source: ImageSource.gallery,
-                                  );
-                                  if (picked != null) {
-                                    final lower = picked.path.toLowerCase();
-                                    if (lower.endsWith('.jpg') ||
-                                        lower.endsWith('.jpeg')) {
-                                      setState(() {
-                                        _pickedImageFile = File(picked.path);
-                                        _pickedFileName =
-                                            picked.name.toLowerCase();
-                                        imageController.text = picked.name;
-                                      });
-                                    } else {
-                                      ScaffoldMessenger.of(
-                                        context,
-                                      ).showSnackBar(
-                                        const SnackBar(
-                                          content: Text(
-                                            "⚠ Please select a .jpg image only",
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  }
-                                }
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.deepPurple,
-                                foregroundColor: Colors.white,
-                              ),
-                              child: const Text("Browse"),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-
-                        // Employee ID
-                        TextField(
-                          controller: idController,
-                          decoration: const InputDecoration(
-                            labelText: "Employee ID",
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-
-                        // Employee Name
-                        TextField(
-                          controller: nameController,
-                          decoration: const InputDecoration(
-                            labelText: "Employee Name",
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-
-                        // Position
-                        TextField(
-                          controller: positionController,
-                          decoration: const InputDecoration(
-                            labelText: "Position",
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-
-                        // Domain
-                        TextField(
-                          controller: domainController,
-                          decoration: const InputDecoration(
-                            labelText: "Domain",
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                        const SizedBox(height: 18),
-
-                        // Submit Button
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.deepPurple,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 14),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                            onPressed: () async {
-                              final empId = idController.text.trim();
-                              final name = nameController.text.trim();
-                              final position = positionController.text.trim();
-                              final domain = domainController.text.trim();
-
-                              if (empId.isEmpty ||
-                                  name.isEmpty ||
-                                  position.isEmpty ||
-                                  domain.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text("⚠ Please fill all fields"),
-                                  ),
-                                );
-                                return;
-                              }
-
-                              if (_pickedImageBytes == null &&
-                                  _pickedImageFile == null) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      "⚠ Please select a .jpg file to upload",
-                                    ),
-                                  ),
-                                );
-                                return;
-                              }
-
-                              try {
-                                var request = http.MultipartRequest(
-                                  'POST',
-                                  Uri.parse(
-                                    "https://hrm-project-2.onrender.com/api/employees",
-                                  ),
-                                );
-
-                                request.fields['employeeId'] = empId;
-                                request.fields['employeeName'] = name;
-                                request.fields['position'] = position;
-                                request.fields['domain'] = domain;
-
-                                if (kIsWeb && _pickedImageBytes != null) {
-                                  request.files.add(
-                                    http.MultipartFile.fromBytes(
-                                      'employeeImage',
-                                      _pickedImageBytes!,
-                                      filename: _pickedFileName ?? 'upload.jpg',
-                                      contentType: MediaType(
-                                        'image',
-                                        'jpeg',
-                                      ), // Multer safe
-                                    ),
-                                  );
-                                } else if (!kIsWeb &&
-                                    _pickedImageFile != null) {
-                                  request.files.add(
-                                    await http.MultipartFile.fromPath(
-                                      'employeeImage',
-                                      _pickedImageFile!.path,
-                                      filename:
-                                          _pickedFileName ??
-                                          _pickedImageFile!.path
-                                              .split('/')
-                                              .last,
-                                    ),
-                                  );
-                                }
-
-                                final streamedResponse = await request.send();
-                                final response = await http.Response.fromStream(
-                                  streamedResponse,
-                                );
-
-                                if (response.statusCode == 200 ||
-                                    response.statusCode == 201) {
-                                  _clearPickedImage();
-                                  imageController.clear();
-                                  idController.clear();
-                                  nameController.clear();
-                                  positionController.clear();
-                                  domainController.clear();
-
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(
                                       content: Text(
-                                        "✅ Employee added successfully!",
+                                        "⚠ Please select a .jpg image only",
                                       ),
                                     ),
                                   );
-                                  Navigator.pop(context);
-
-                                  // Refresh Employee List
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder:
-                                          (_) => const EmployeeListScreen(),
-                                    ),
-                                  );
-                                } else {
-                                  String msg =
-                                      "❌ Failed: ${response.statusCode}";
-                                  try {
-                                    final body = jsonDecode(response.body);
-                                    if (body is Map &&
-                                        body['message'] != null) {
-                                      msg = body['message'];
-                                    }
-                                  } catch (_) {}
-                                  ScaffoldMessenger.of(
-                                    context,
-                                  ).showSnackBar(SnackBar(content: Text(msg)));
                                 }
-                              } catch (e) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(content: Text("❌ Error: $e")),
-                                );
                               }
-                            },
-                            child: const Text(
-                              "Add Employee",
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.deepPurple,
+                            foregroundColor: Colors.white,
                           ),
+                          child: const Text("Browse"),
                         ),
                       ],
                     ),
-                  ),
+                    const SizedBox(height: 16),
+
+                    // Employee ID
+                    TextField(
+                      controller: idController,
+                      decoration: const InputDecoration(
+                        labelText: "Employee ID",
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Employee Name
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: "Employee Name",
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Position
+                    TextField(
+                      controller: positionController,
+                      decoration: const InputDecoration(
+                        labelText: "Position",
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Domain
+                    TextField(
+                      controller: domainController,
+                      decoration: const InputDecoration(
+                        labelText: "Domain",
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+
+                    // Submit Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepPurple,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        onPressed: () async {
+                          final empId = idController.text.trim();
+                          final name = nameController.text.trim();
+                          final position = positionController.text.trim();
+                          final domain = domainController.text.trim();
+
+                          if (empId.isEmpty ||
+                              name.isEmpty ||
+                              position.isEmpty ||
+                              domain.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("⚠ Please fill all fields"),
+                              ),
+                            );
+                            return;
+                          }
+
+                          if (_pickedImageBytes == null &&
+                              _pickedImageFile == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  "⚠ Please select a .jpg file to upload",
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+
+                          try {
+                            var request = http.MultipartRequest(
+                              'POST',
+                              Uri.parse("http://localhost:5000/api/employees"),
+                            );
+
+                            request.fields['employeeId'] = empId;
+                            request.fields['employeeName'] = name;
+                            request.fields['position'] = position;
+                            request.fields['domain'] = domain;
+
+                            if (kIsWeb && _pickedImageBytes != null) {
+                              request.files.add(
+                                http.MultipartFile.fromBytes(
+                                  'employeeImage',
+                                  _pickedImageBytes!,
+                                  filename: _pickedFileName ?? 'upload.jpg',
+                                  contentType: MediaType(
+                                    'image',
+                                    'jpeg',
+                                  ), // Multer safe
+                                ),
+                              );
+                            } else if (!kIsWeb && _pickedImageFile != null) {
+                              request.files.add(
+                                await http.MultipartFile.fromPath(
+                                  'employeeImage',
+                                  _pickedImageFile!.path,
+                                  filename:
+                                      _pickedFileName ??
+                                      _pickedImageFile!.path.split('/').last,
+                                ),
+                              );
+                            }
+
+                            final streamedResponse = await request.send();
+                            final response = await http.Response.fromStream(
+                              streamedResponse,
+                            );
+
+                            if (response.statusCode == 200 ||
+                                response.statusCode == 201) {
+                              _clearPickedImage();
+                              imageController.clear();
+                              idController.clear();
+                              nameController.clear();
+                              positionController.clear();
+                              domainController.clear();
+
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    "✅ Employee added successfully!",
+                                  ),
+                                ),
+                              );
+                              Navigator.pop(context);
+
+                              // Refresh Employee List
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const EmployeeListScreen(),
+                                ),
+                              );
+                            } else {
+                              String msg = "❌ Failed: ${response.statusCode}";
+                              try {
+                                final body = jsonDecode(response.body);
+                                if (body is Map && body['message'] != null) {
+                                  msg = body['message'];
+                                }
+                              } catch (_) {}
+                              ScaffoldMessenger.of(
+                                context,
+                              ).showSnackBar(SnackBar(content: Text(msg)));
+                            }
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("❌ Error: $e")),
+                            );
+                          }
+                        },
+                        child: const Text(
+                          "Add Employee",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
+        ),
+      ),
     ).then((_) {
       _clearPickedImage();
       imageController.clear();
@@ -638,21 +620,21 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
   }
 
   /// Helper: format date in YYYY-MM-DD hh:mm with zero padding
-  String _formatDate(dynamic iso) {
-    if (iso == null) return 'N/A';
-    try {
-      final dt = DateTime.parse(iso.toString()).toLocal();
-      return DateFormat('yyyy-MM-dd hh:mm a').format(dt); // 2025-10-03 12:09 PM
-    } catch (_) {
-      return iso.toString();
-    }
+String _formatDate(dynamic iso) {
+  if (iso == null) return 'N/A';
+  try {
+    final dt = DateTime.parse(iso.toString()).toLocal();
+    return DateFormat('yyyy-MM-dd hh:mm a').format(dt); // 2025-10-03 12:09 PM
+  } catch (_) {
+    return iso.toString();
   }
+}
 
   /// 🔹 Fetch pending change requests
   Future<List<dynamic>> _fetchPendingRequests() async {
     try {
       final response = await http.get(
-        Uri.parse("https://hrm-project-2.onrender.com/requests?status=pending"),
+        Uri.parse("http://localhost:5000/requests?status=pending"),
         headers: {"Accept": "application/json"},
       );
       if (response.statusCode == 200) {
@@ -667,7 +649,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
   Future<void> _approveRequest(String requestId) async {
     try {
       final response = await http.post(
-        Uri.parse('https://hrm-project-2.onrender.com/requests/$requestId/approve'),
+        Uri.parse('http://localhost:5000/requests/$requestId/approve'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'resolvedBy':
@@ -692,7 +674,7 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
   Future<void> _declineRequest(String requestId) async {
     try {
       final response = await http.post(
-        Uri.parse('https://hrm-project-2.onrender.com/requests/$requestId/decline'),
+        Uri.parse('http://localhost:5000/requests/$requestId/decline'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'resolvedBy':
@@ -719,94 +701,78 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
 
     showDialog(
       context: context,
-      builder:
-          (_) => AlertDialog(
-            title: const Text("Pending Change Requests"),
-            content: SizedBox(
-              width: double.maxFinite,
-              child:
-                  requests.isEmpty
-                      ? const Text("No pending requests.")
-                      : ListView.builder(
-                        shrinkWrap: true,
-                        itemCount: requests.length,
-                        itemBuilder: (context, idx) {
-                          final r = requests[idx];
-                          final createdAt =
-                              r['createdAt'] != null
-                                  ? _formatDate(r['createdAt'])
-                                  : '';
-
-                          return Card(
-                            margin: const EdgeInsets.symmetric(vertical: 6),
-                            child: ListTile(
-                              title: Text(
-                                '${r['full_name']} — ${r['field'] ?? 'Unknown'}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Employee ID: ${r['employeeId']}'),
-                                  Text('Field: ${r['field']}'),
-                                  Text('Old: ${r['oldValue'] ?? ''}'),
-                                  Text('New: ${r['newValue'] ?? ''}'),
-                                  Text(
-                                    'Requested by: ${r['requestedBy'] ?? ''}',
-                                  ),
-                                  Text(
-                                    'Created: $createdAt',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              isThreeLine: true,
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.check,
-                                      color: Colors.green,
-                                    ),
-                                    tooltip: "Approve",
-                                    onPressed: () async {
-                                      Navigator.of(context).pop();
-                                      await _approveRequest(r['_id']);
-                                      await _showChangeRequests();
-                                    },
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.close,
-                                      color: Colors.red,
-                                    ),
-                                    tooltip: "Reject",
-                                    onPressed: () async {
-                                      Navigator.of(context).pop();
-                                      await _declineRequest(r['_id']);
-                                      await _showChangeRequests();
-                                    },
-                                  ),
-                                ],
+      builder: (_) => AlertDialog(
+        title: const Text("Pending Change Requests"),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: requests.isEmpty
+              ? const Text("No pending requests.")
+              : ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: requests.length,
+                  itemBuilder: (context, idx) {
+                    final r = requests[idx];
+                    final createdAt = r['createdAt'] != null
+                        ? _formatDate(r['createdAt'])
+                        : '';
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 6),
+                      child: ListTile(
+                        title: Text(
+                          '${r['full_name'] ?? 'Unknown'} — ${r['field']}',
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Old: ${r['oldValue'] ?? ''}'),
+                            Text('New: ${r['newValue'] ?? ''}'),
+                            Text('Requested by: ${r['requestedBy'] ?? ''}'),
+                            Text(
+                              'Created: $createdAt',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
                               ),
                             ),
-                          );
-                        },
+                          ],
+                        ),
+                        isThreeLine: true,
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(
+                                Icons.check,
+                                color: Colors.green,
+                              ),
+                              onPressed: () async {
+                                Navigator.of(context).pop();
+                                await _approveRequest(r['_id']);
+                                await _showChangeRequests();
+                              },
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.close, color: Colors.red),
+                              onPressed: () async {
+                                Navigator.of(context).pop();
+                                await _declineRequest(r['_id']);
+                                await _showChangeRequests();
+                              },
+                            ),
+                          ],
+                        ),
                       ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("Close"),
-              ),
-            ],
+                    );
+                  },
+                ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Close"),
           ),
+        ],
+      ),
     );
   }
 
@@ -815,7 +781,6 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
     if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-
     if (_error != null) {
       return Scaffold(
         body: Center(
@@ -858,12 +823,35 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
   }
 
   Widget _buildQuickActions(BuildContext context) {
+    final role =
+        Provider.of<UserProvider>(
+          context,
+          listen: false,
+        ).position?.toLowerCase() ??
+        "founder";
+    // final approverRole = (role == "hr") ? "hr" : "founder";
+    final approverRole = (role == "superadmin")
+        ? "superadmin"
+        : (role == "hr")
+        ? "hr"
+        : (role == "founder")
+        ? "founder"
+        : (role == "tl")
+        ? "tl"
+        : "employee";
+
     return Center(
       child: Wrap(
         spacing: 90,
         runSpacing: 20,
         alignment: WrapAlignment.center,
         children: [
+          _quickActionButton('Apply Leave', () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => ApplyLeave()),
+            );
+          }),
           _quickActionButton('Download Payslip', () {
             Navigator.push(
               context,
@@ -880,22 +868,29 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder:
-                    (_) => AdminNotificationsPage(
-                      empId:
-                          Provider.of<UserProvider>(
-                            context,
-                            listen: false,
-                          ).employeeId ??
-                          '',
-                    ),
+                builder: (_) => AdminNotificationsPage(
+                  empId:
+                      Provider.of<UserProvider>(
+                        context,
+                        listen: false,
+                      ).employeeId ??
+                      '',
+                ),
               ),
             );
           }),
           _quickActionButton('Performance Review', () {
+            final userProvider = Provider.of<UserProvider>(
+              context,
+              listen: false,
+            );
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => SuperadminPerformancePage()),
+              MaterialPageRoute(
+                builder: (_) => SuperadminPerformancePage(
+                  currentUserId: userProvider.employeeId!,
+                ),
+              ),
             );
           }),
           _quickActionButton('Employee Feedback', _showEmployeeComments),
@@ -913,9 +908,15 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
               MaterialPageRoute(builder: (_) => const EmployeeListScreen()),
             );
           }),
+
           FutureBuilder<int>(
-            future: fetchPendingCount("admin"),
+            future: fetchPendingCount(
+              approverRole,
+              Provider.of<UserProvider>(context, listen: false).employeeId ??
+                  '',
+            ),
             builder: (context, snapshot) {
+              // Re-fetch on state change if needed, or just rely on future builder
               final count = snapshot.data ?? 0;
               return Stack(
                 clipBehavior: Clip.none,
@@ -924,9 +925,8 @@ class _SuperAdminDashboardState extends State<SuperAdminDashboard> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder:
-                            (context) =>
-                                const LeaveApprovalPage(userRole: "admin"),
+                        builder: (context) =>
+                            LeaveApprovalPage(userRole: approverRole),
                       ),
                     );
                   }),

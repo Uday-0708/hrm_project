@@ -1,10 +1,10 @@
-//employee_directory.dart
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'sidebar.dart';
-import 'package:http/http.dart' as http;
-import 'package:provider/provider.dart';
 import 'user_provider.dart';
+import 'package:http/http.dart' as http;
+// import 'email_page.dart';
 import 'message.dart';
 import 'audio_call_page.dart';
 
@@ -17,6 +17,7 @@ class EmployeeDirectoryPage extends StatefulWidget {
 
 class EmployeeDirectoryPageState extends State<EmployeeDirectoryPage> {
   List<dynamic> employees = [];
+  List<dynamic> filteredEmployees = [];
   bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
 
@@ -29,7 +30,7 @@ class EmployeeDirectoryPageState extends State<EmployeeDirectoryPage> {
   Future<void> fetchEmployees() async {
     try {
       final response = await http.get(
-        Uri.parse("https://hrm-project-2.onrender.com/api/employees"),
+        Uri.parse("http://localhost:5000/api/employees"),
       );
 
       if (response.statusCode == 200) {
@@ -55,31 +56,16 @@ class EmployeeDirectoryPageState extends State<EmployeeDirectoryPage> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // 🔹 Search + Refresh button row
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(child: _searchBox('Search by ID, Name, Position, or Domain...')),
-                const SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: fetchEmployees, // 🔄 Refresh
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.white24,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                  ),
-                  child: const Text(
-                    "EmployeeList",
-                    style: TextStyle(color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
+            // Search Box
+            _searchBox('Search by ID, Name, Position, or Domain...'),
             const SizedBox(height: 20),
+
+            // ✅ Loader or Grid
             Expanded(
               child: _isLoading
-                  ? const Center(child: CircularProgressIndicator())
+                  ? const Center(
+                      child: CircularProgressIndicator(),
+                    ) // Initial load
                   : _EmployeeGrid(
                       allEmployees: employees,
                       searchController: _searchController,
@@ -91,6 +77,7 @@ class EmployeeDirectoryPageState extends State<EmployeeDirectoryPage> {
     );
   }
 
+  // ✅ Search Box
   Widget _searchBox(String hint) {
     return SizedBox(
       child: TextField(
@@ -112,6 +99,7 @@ class EmployeeDirectoryPageState extends State<EmployeeDirectoryPage> {
   }
 }
 
+/// A stateful widget to display and filter the employee grid, preventing focus issues.
 class _EmployeeGrid extends StatefulWidget {
   final List<dynamic> allEmployees;
   final TextEditingController searchController;
@@ -139,7 +127,7 @@ class _EmployeeGridState extends State<_EmployeeGrid> {
   void didUpdateWidget(covariant _EmployeeGrid oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.allEmployees != oldWidget.allEmployees) {
-      _filterEmployees();
+      _filterEmployees(); // Re-filter if the source list changes
     }
   }
 
@@ -194,7 +182,7 @@ class _EmployeeGridState extends State<_EmployeeGrid> {
         final emp = _filteredEmployees[index];
         final imagePath = emp['employeeImage'];
         final imageUrl = (imagePath != null && imagePath.isNotEmpty)
-            ? "https://hrm-project-2.onrender.com$imagePath"
+            ? "http://localhost:5000$imagePath"
             : "";
         return _employeeCard(
           emp['employeeId'] ?? "",
@@ -246,19 +234,23 @@ class _EmployeeGridState extends State<_EmployeeGrid> {
               textAlign: TextAlign.center,
             ),
             const Spacer(),
-
-            // ✅ Audio + Video Call Integration
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 IconButton(
-                  icon: Icon(Icons.email,
-                      size: 25, color: Colors.deepPurple.withOpacity(0.5)),
+                  icon: Icon(
+                    Icons.email,
+                    size: 25,
+                    color: Colors.deepPurple.withOpacity(0.5),
+                  ),
                   onPressed: null,
                 ),
                 IconButton(
-                  icon: const Icon(Icons.message,
-                      size: 25, color: Colors.deepPurple),
+                  icon: const Icon(
+                    Icons.message,
+                    size: 25,
+                    color: Colors.deepPurple,
+                  ),
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -269,44 +261,50 @@ class _EmployeeGridState extends State<_EmployeeGrid> {
                   },
                 ),
                 IconButton(
-                  icon: const Icon(Icons.phone,
-                      size: 25, color: Colors.deepPurple),
-                  onPressed: () {
-                    final currentUserId =
-                        Provider.of<UserProvider>(context, listen: false)
-                            .employeeId!;
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AudioCallPage(
-                          currentUserId: currentUserId,
-                          targetUserId: employeeId,
-                          isCaller: true,
-                          isVideo: false,
-                        ),
-                      ),
-                    );
-                  },
+                  icon: const Icon(
+                    Icons.phone,
+                    size: 25,
+                    color: Colors.deepPurple,
+                   ),
+                   onPressed: () {
+                         // TODO: replace with your logged-in employee id retrieval
+                     //  const currentUserId = "EMPID"; // <<--- get from Provider / auth
+                     final currentUserId = Provider.of<UserProvider>(context, listen: false).employeeId!;
+                       Navigator.push(
+                         context,
+                         MaterialPageRoute(
+                            builder: (context) => AudioCallPage(
+                              currentUserId: currentUserId,
+                              targetUserId: employeeId,
+                              isCaller: true,
+                              isVideo: false,
+                            ),
+                         ),
+                       );
+                   },
                 ),
                 IconButton(
-                  icon: const Icon(Icons.video_call,
-                      size: 25, color: Colors.deepPurple),
-                  onPressed: () {
-                    final currentUserId =
-                        Provider.of<UserProvider>(context, listen: false)
-                            .employeeId!;
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => AudioCallPage(
-                          currentUserId: currentUserId,
-                          targetUserId: employeeId,
-                          isCaller: true,
-                          isVideo: true,
-                        ),
-                      ),
-                    );
-                  },
+                  icon: const Icon(
+                    Icons.video_call,
+                     size: 25,
+                     color: Colors.deepPurple,
+                   ),
+              onPressed: () {
+                 // TODO: replace with your logged-in employee id retrieval
+               //const currentUserId = "EMPID"; // <<--- get from Provider / auth
+               final currentUserId = Provider.of<UserProvider>(context, listen: false).employeeId!;
+               Navigator.push(
+                 context,
+                 MaterialPageRoute(
+                   builder: (context) => AudioCallPage(
+                     currentUserId: currentUserId,
+                     targetUserId: employeeId,
+                     isCaller: true,
+                     isVideo: true,
+                   ),
+                 ),
+               );
+              },
                 ),
               ],
             ),
