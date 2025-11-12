@@ -15,7 +15,6 @@ import 'employee_profile.dart';
 import 'employee_directory.dart';
 import 'reports.dart';
 import 'employeenotification.dart';
-//import 'notification.dart';
 import 'admin_notification.dart';
 import 'attendance_login.dart';
 import 'company_events.dart';
@@ -48,7 +47,7 @@ class _SidebarState extends State<Sidebar> {
 
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:5000/apply/get-employee-name/$employeeId'),
+        Uri.parse('https://hrm-project-2.onrender.com/apply/get-employee-name/$employeeId'),
       );
 
       if (response.statusCode == 200) {

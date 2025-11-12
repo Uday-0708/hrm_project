@@ -30,7 +30,7 @@ class EmployeeDirectoryPageState extends State<EmployeeDirectoryPage> {
   Future<void> fetchEmployees() async {
     try {
       final response = await http.get(
-        Uri.parse("http://localhost:5000/api/employees"),
+        Uri.parse("https://hrm-project-2.onrender.com/api/employees"),
       );
 
       if (response.statusCode == 200) {
@@ -182,7 +182,7 @@ class _EmployeeGridState extends State<_EmployeeGrid> {
         final emp = _filteredEmployees[index];
         final imagePath = emp['employeeImage'];
         final imageUrl = (imagePath != null && imagePath.isNotEmpty)
-            ? "http://localhost:5000$imagePath"
+            ? "https://hrm-project-2.onrender.com$imagePath"
             : "";
         return _employeeCard(
           emp['employeeId'] ?? "",

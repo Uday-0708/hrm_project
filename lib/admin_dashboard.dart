@@ -71,7 +71,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
     try {
       final response = await http.get(
-        Uri.parse("http://localhost:5000/get-employee-name/$employeeId"),
+        Uri.parse("https://hrm-project-2.onrender.com/$employeeId"),
       );
 
       if (response.statusCode == 200) {
@@ -105,7 +105,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
       final year = DateTime.now().year;
       final url =
-          "http://localhost:5000/apply/leave-balance/$employeeId?year=$year";
+          "https://hrm-project-2.onrender.com/$employeeId?year=$year";
       final response = await http.get(Uri.parse(url));
 
       if (response.statusCode == 200) {
@@ -143,7 +143,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       final response = await http.get(
         Uri.parse(
           // Pass both role and ID to the backend
-          "http://localhost:5000/apply/pending-count?approver=$userRole&approverId=$employeeId",
+          "https://hrm-project-2.onrender.com/apply/pending-count?approver=$userRole&approverId=$employeeId",
         ),
       );
 
@@ -164,7 +164,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Future<void> _deleteEmployeeComment(String id) async {
     try {
       final response = await http.delete(
-        Uri.parse("http://localhost:5000/review-decision/$id"),
+        Uri.parse("https://hrm-project-2.onrender.com/review-decision/$id"),
       );
 
       if (response.statusCode == 200) {
@@ -191,7 +191,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     try {
       final response = await http.get(
         Uri.parse(
-          "http://localhost:5000/review-decision/feedback?positions=employee,intern",
+          "https://hrm-project-2.onrender.com/review-decision/feedback?positions=employee,intern",
         ),
         headers: {"Accept": "application/json"},
       );
@@ -290,18 +290,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
     }
   }
 
-  /*// ✅ Helper: format date nicely
-  String _formatDate(dynamic iso) {
-    if (iso == null) return 'N/A';
-    try {
-      final dt = DateTime.tryParse(iso.toString());
-      if (dt == null) return iso.toString();
-      return "${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} "
-          "${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}";
-    } catch (_) {
-      return iso.toString();
-    }
-  }*/
   String _formatDate(dynamic dateStr) {
     if (dateStr == null) return '';
     try {
