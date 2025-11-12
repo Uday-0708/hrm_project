@@ -28,6 +28,8 @@ const payslipRoutes = require("./routes/payslip");
  
 // ---------------- EXPRESS APP SETUP ---------------- //
 const app = express();
+const PORT = process.env.PORT || 5000;
+const MONGO_URI = process.env.MONGO_URI;
 const server = http.createServer(app);
 
 // -------------------- SOCKET.IO -------------------- //
@@ -35,13 +37,10 @@ const io = new Server(server, {
   cors: {
     origin: 
       "https://zeaihrm2.netlify.app",
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
   },
 });
-
-// -------------------- CONFIG -------------------- //
-const PORT = process.env.PORT || 5000;
-const MONGO_URI = process.env.MONGO_URI;
  
 // ---------------- MIDDLEWARE ---------------- //
 app.use((req, res, next) => {
@@ -53,9 +52,6 @@ app.use(
   cors({
     origin: [
       "https://zeaihrm2.netlify.app",
-     // "https://newzeaihrm.netlify.app",
-      //"https://ephemeral-griffin-3d28a4.netlify.app", // ✅ no trailing slash!
-      //"http://localhost:3000" // Uncomment for local testing if needed
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,

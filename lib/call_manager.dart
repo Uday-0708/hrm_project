@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:flutter/foundation.dart';
 
 typedef IncomingCallCallback = void Function(String fromId, Map signal);
 typedef RemoteStreamCallback = void Function(MediaStream stream);

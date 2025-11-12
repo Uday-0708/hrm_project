@@ -1,13 +1,12 @@
+//employee_directory.dart
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'sidebar.dart';
+import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'user_provider.dart';
-// import 'email_page.dart';
 import 'message.dart';
 import 'audio_call_page.dart';
-
 
 class EmployeeDirectoryPage extends StatefulWidget {
   const EmployeeDirectoryPage({super.key});
@@ -19,6 +18,7 @@ class EmployeeDirectoryPage extends StatefulWidget {
 class EmployeeDirectoryPageState extends State<EmployeeDirectoryPage> {
   List<dynamic> employees = [];
   bool _isLoading = true;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
@@ -38,11 +38,11 @@ class EmployeeDirectoryPageState extends State<EmployeeDirectoryPage> {
           _isLoading = false;
         });
       } else {
-        print("❌ Failed to load employees: ${response.statusCode}");
+        debugPrint("❌ Failed to load employees: ${response.statusCode}");
         setState(() => _isLoading = false);
       }
     } catch (e) {
-      print("❌ Error fetching employees: $e");
+      debugPrint("❌ Error fetching employees: $e");
       setState(() => _isLoading = false);
     }
   }
@@ -55,13 +55,14 @@ class EmployeeDirectoryPageState extends State<EmployeeDirectoryPage> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // Search + Button
+            // 🔹 Search + Refresh button row
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _searchBox('Search employee...', 200),
+                Expanded(child: _searchBox('Search by ID, Name, Position, or Domain...')),
+                const SizedBox(width: 10),
                 ElevatedButton(
-                  onPressed: fetchEmployees, // 🔄 refresh from DB
+                  onPressed: fetchEmployees, // 🔄 Refresh
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white24,
                     shape: RoundedRectangleBorder(
@@ -76,35 +77,12 @@ class EmployeeDirectoryPageState extends State<EmployeeDirectoryPage> {
               ],
             ),
             const SizedBox(height: 20),
-
-            // ✅ Loader or Grid
             Expanded(
               child: _isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : GridView.builder(
-                      itemCount: employees.length,
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 4,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            childAspectRatio: 0.95,
-                          ),
-                      itemBuilder: (context, index) {
-                        final emp = employees[index];
-                        //final profile = emp['photo']; // 🔹 backend field
-                        final imageUrl =
-                            (emp['employeeImage'] != null && emp['employeeImage'].isNotEmpty)
-                            ? "https://hrm-project-2.onrender.com${emp['employeeImage']}"
-                            : "";
-                        return _employeeCard(
-                          emp['employeeId'] ?? "", // ✅ pass employeeId also
-                          emp['employeeName'] ?? "Unknown",
-                          emp['position'] ?? "Unknown",
-                          // "http://localhost:5000/uploads/${emp['photo']}", // 🔴 profile image URL
-                          imageUrl, // 🔹 safe URL or empty
-                        );
-                      },
+                  : _EmployeeGrid(
+                      allEmployees: employees,
+                      searchController: _searchController,
                     ),
             ),
           ],
@@ -113,7 +91,121 @@ class EmployeeDirectoryPageState extends State<EmployeeDirectoryPage> {
     );
   }
 
-  // ✅ Employee Card
+  Widget _searchBox(String hint) {
+    return SizedBox(
+      child: TextField(
+        controller: _searchController,
+        style: const TextStyle(color: Colors.white),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: const TextStyle(color: Colors.white70),
+          prefixIcon: const Icon(Icons.search, color: Colors.white70),
+          filled: true,
+          fillColor: const Color(0xFF2D2F41),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(30),
+            borderSide: BorderSide.none,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmployeeGrid extends StatefulWidget {
+  final List<dynamic> allEmployees;
+  final TextEditingController searchController;
+
+  const _EmployeeGrid({
+    required this.allEmployees,
+    required this.searchController,
+  });
+
+  @override
+  State<_EmployeeGrid> createState() => _EmployeeGridState();
+}
+
+class _EmployeeGridState extends State<_EmployeeGrid> {
+  List<dynamic> _filteredEmployees = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredEmployees = List.from(widget.allEmployees);
+    widget.searchController.addListener(_filterEmployees);
+  }
+
+  @override
+  void didUpdateWidget(covariant _EmployeeGrid oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.allEmployees != oldWidget.allEmployees) {
+      _filterEmployees();
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.searchController.removeListener(_filterEmployees);
+    super.dispose();
+  }
+
+  void _filterEmployees() {
+    final query = widget.searchController.text.toLowerCase();
+    setState(() {
+      if (query.isEmpty) {
+        _filteredEmployees = List.from(widget.allEmployees);
+      } else {
+        _filteredEmployees = widget.allEmployees.where((emp) {
+          final name = (emp['employeeName'] ?? '').toLowerCase();
+          final id = (emp['employeeId'] ?? '').toLowerCase();
+          final position = (emp['position'] ?? '').toLowerCase();
+          final domain = (emp['domain'] ?? '').toLowerCase();
+          return name.contains(query) ||
+              id.contains(query) ||
+              position.contains(query) ||
+              domain.contains(query);
+        }).toList();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_filteredEmployees.isEmpty) {
+      return Center(
+        child: Text(
+          widget.searchController.text.trim().isEmpty
+              ? 'No employees available.'
+              : 'No results for "${widget.searchController.text.trim()}"',
+          style: const TextStyle(color: Colors.white),
+        ),
+      );
+    }
+
+    return GridView.builder(
+      itemCount: _filteredEmployees.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 4,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 0.95,
+      ),
+      itemBuilder: (context, index) {
+        final emp = _filteredEmployees[index];
+        final imagePath = emp['employeeImage'];
+        final imageUrl = (imagePath != null && imagePath.isNotEmpty)
+            ? "https://hrm-project-2.onrender.com$imagePath"
+            : "";
+        return _employeeCard(
+          emp['employeeId'] ?? "",
+          emp['employeeName'] ?? "Unknown",
+          emp['position'] ?? "Unknown",
+          imageUrl,
+        );
+      },
+    );
+  }
+
   Widget _employeeCard(
     String employeeId,
     String name,
@@ -133,8 +225,7 @@ class EmployeeDirectoryPageState extends State<EmployeeDirectoryPage> {
               backgroundColor: Colors.grey[200],
               backgroundImage: imageUrl.isNotEmpty
                   ? NetworkImage(imageUrl)
-                  : const AssetImage("assets/profile.png"),
-              //backgroundImage: NetworkImage(imageUrl),
+                  : const AssetImage("assets/profile.png") as ImageProvider,
               onBackgroundImageError: (_, __) {
                 debugPrint('Image load error for $imageUrl');
               },
@@ -155,117 +246,71 @@ class EmployeeDirectoryPageState extends State<EmployeeDirectoryPage> {
               textAlign: TextAlign.center,
             ),
             const Spacer(),
+
+            // ✅ Audio + Video Call Integration
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 IconButton(
-                  icon: Icon(
-                    Icons.email,
-                    size: 25,
-                    color: Colors.deepPurple.withOpacity(0.5),
-                  ),
+                  icon: Icon(Icons.email,
+                      size: 25, color: Colors.deepPurple.withOpacity(0.5)),
                   onPressed: null,
-                  //,
-                  // onPressed: () {
-                  //   Navigator.push(
-                  //     context,
-                  //     MaterialPageRoute(
-                  //       builder: (context) => EmailPage(
-                  //         employeeId: employeeId, // ✅ now correct
-                  //       ),
-                  //     ),
-                  //   );
-                  // },
                 ),
                 IconButton(
-                  icon: const Icon(
-                    Icons.message,
-                    size: 25,
-                    color: Colors.deepPurple,
-                  ),
+                  icon: const Icon(Icons.message,
+                      size: 25, color: Colors.deepPurple),
                   onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => MsgPage(
-                          employeeId: employeeId, // ✅ new message page
+                        builder: (context) => MsgPage(employeeId: employeeId),
+                      ),
+                    );
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.phone,
+                      size: 25, color: Colors.deepPurple),
+                  onPressed: () {
+                    final currentUserId =
+                        Provider.of<UserProvider>(context, listen: false)
+                            .employeeId!;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AudioCallPage(
+                          currentUserId: currentUserId,
+                          targetUserId: employeeId,
+                          isCaller: true,
+                          isVideo: false,
                         ),
                       ),
                     );
                   },
                 ),
-
-                //Icon(Icons.message, size: 25, color: Colors.deepPurple),
                 IconButton(
-                  icon: const Icon(
-                    Icons.phone,
-                    size: 25,
-                    color: Colors.deepPurple,
-                   ),
-                   onPressed: () {
-                         // TODO: replace with your logged-in employee id retrieval
-                     //  const currentUserId = "EMPID"; // <<--- get from Provider / auth
-                     final currentUserId = Provider.of<UserProvider>(context, listen: false).employeeId!;
-                       Navigator.push(
-                         context,
-                         MaterialPageRoute(
-                            builder: (context) => AudioCallPage(
-                              currentUserId: currentUserId,
-                              targetUserId: employeeId,
-                              isCaller: true,
-                              isVideo: false,
-                            ),
-                         ),
-                       );
-                   }
+                  icon: const Icon(Icons.video_call,
+                      size: 25, color: Colors.deepPurple),
+                  onPressed: () {
+                    final currentUserId =
+                        Provider.of<UserProvider>(context, listen: false)
+                            .employeeId!;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AudioCallPage(
+                          currentUserId: currentUserId,
+                          targetUserId: employeeId,
+                          isCaller: true,
+                          isVideo: true,
+                        ),
+                      ),
+                    );
+                  },
                 ),
-                IconButton(
-  icon: const Icon(
-    Icons.video_call,
-    size: 25,
-    color: Colors.deepPurple,
-            ),
-              onPressed: () {
-                 // TODO: replace with your logged-in employee id retrieval
-               //const currentUserId = "EMPID"; // <<--- get from Provider / auth
-               final currentUserId = Provider.of<UserProvider>(context, listen: false).employeeId!;
-               Navigator.push(
-                 context,
-                 MaterialPageRoute(
-                   builder: (context) => AudioCallPage(
-                     currentUserId: currentUserId,
-                     targetUserId: employeeId,
-                     isCaller: true,
-                     isVideo: true,
-                   ),
-                  ),
-                 );
-                },
-               ),
               ],
             ),
           ],
-        ),
-      ),
-    );
-  }
-
-  // ✅ Search Box
-  Widget _searchBox(String hint, double width) {
-    return SizedBox(
-      width: width,
-      child: TextField(
-        style: const TextStyle(color: Colors.white),
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: const TextStyle(color: Colors.white70),
-          prefixIcon: const Icon(Icons.search, color: Colors.white70),
-          filled: true,
-          fillColor: const Color(0xFF2D2F41),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(30),
-            borderSide: BorderSide.none,
-          ),
         ),
       ),
     );
